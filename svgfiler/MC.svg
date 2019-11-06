@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<svg width="640" height="480" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+ <!-- Created with SVG-edit - https://github.com/SVG-Edit/svgedit-->
+ <g class="layer">
+  <title>Layer 1</title>
+  <rect class="target1" fill="#00ff7f" height="71" id="svg_1" stroke="#000000" stroke-width="5" width="100" x="128.385714" y="322.557143"/>
+  <rect class="target2" fill="#3f7f00" height="71" id="svg_4" stroke="#000000" stroke-width="5" width="100" x="275.885714" y="322.157149"/>
+  <rect class="target3" fill="#d4ffaa" height="71" id="svg_5" stroke="#000000" stroke-width="5" width="100" x="436.885714" y="321.157149"/>
+  <g id="svg_7">
+   <title>customlabel?</title>
+   <ellipse class="source" cx="160.385714" cy="153.157143" fill="#7f00ff" id="svg_2" rx="41" ry="41" stroke="#000000" stroke-width="5"/>
+   <ellipse class="source" cx="352.385714" cy="149.157143" fill="#ff7f00" id="svg_3" rx="78" ry="20" stroke="#000000" stroke-width="5"/>
+   <ellipse class="source" cx="497.885714" cy="160.657135" fill="#ffaaff" id="svg_6" rx="78" ry="20" stroke="#000000" stroke-width="5" transform="rotate(90.674 497.886 160.657)"/>
+  </g>
+  <text fill="#000000" font-family="serif" font-size="24" id="svg_8" stroke="#000000" stroke-dasharray="null" stroke-linecap="null" stroke-linejoin="null" stroke-width="0" style="cursor: move;" text-anchor="middle" x="319.385714" xml:space="preserve" y="41.871429">Hvor mange objekter?</text>
+  <text fill="#000000" font-family="serif" font-size="24" id="svg_9" stroke="#000000" stroke-dasharray="null" stroke-linecap="null" stroke-linejoin="null" stroke-width="0" text-anchor="middle" x="172.633333" xml:space="preserve" y="364.566667">1</text>
+  <text fill="#000000" font-family="serif" font-size="24" id="svg_10" stroke="#000000" stroke-dasharray="null" stroke-linecap="null" stroke-linejoin="null" stroke-width="0" text-anchor="middle" x="323.633333" xml:space="preserve" y="361.566667">2</text>
+  <text fill="#000000" font-family="serif" font-size="24" id="svg_11" stroke="#000000" stroke-dasharray="null" stroke-linecap="null" stroke-linejoin="null" stroke-width="0" text-anchor="middle" x="485.633333" xml:space="preserve" y="361.566667">3</text>
+ </g>
+</svg>
