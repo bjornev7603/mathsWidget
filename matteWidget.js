@@ -6,7 +6,8 @@ export default class InputWidget {
     constructor(divElementId, config, answer = null, onAnswer) {
         this.divElementId = divElementId;
 //
-        document.getElementById(divElementId).style.height = "100%"
+        
+        document.getElementById(this.divElementId).style.height = `700px` // h +"px"
 //
 
         this.config = config;
@@ -165,7 +166,8 @@ export default class InputWidget {
 
 
         //xdim = 900, ydim = 900, vb_x = 750, vb_y = 700,
-        var figuren = new SVG(this.divElementId)//.size("29700","21000");
+        // var figuren = new SVG(this.divElementId)//.size("29700","21000");
+        var figuren =SVG(this.divElementId).size("100%","100%");
         //figuren.viewbox(0,0,vb_x,vb_y);
 
          //if($( ".click_start" ).empty) {
@@ -186,14 +188,23 @@ export default class InputWidget {
             var parser = new DOMParser();
             var doc = parser.parseFromString(tmp, "image/svg+xml");
             window.svgdoc = doc
-            let h = doc.querySelector('svg').height.baseVal.value
-            document.getElementById(this.divElementId).style.height = `${h}px` // h +"px"
+            // let h = doc.querySelector('svg').height.baseVal.value
+            doc.querySelector('svg').setAttribute('width','100%')
+            doc.querySelector('svg').setAttribute('height','100%')
+            // doc.querySelector('svg').setAttribute('viewBox','0 0 100% 100%')
 
-            let w = document.getElementById(this.divElementId).clientWidth
-            console.log("W", w, ", H", h)
+            // document.getElementById(this.divElementId).style.height = `${h}px` // h +"px"
+
+            // let w = document.getElementById(this.divElementId).clientWidth
+            // console.log("W", w, ", H", h)
             // svgimage.size(h)
 
-            var svgimage = figuren.svg(ajax.responseText); // put loaded file on SVG document
+            // figuren = SVG(this.divElementId).size("100%","100%");
+
+            // var svgimage = figuren.svg(ajax.responseText); // put loaded file on SVG document
+            var oSerializer = new XMLSerializer();
+            var sXML = oSerializer.serializeToString(doc);
+            var svgimage = figuren.svg(sXML); // put loaded file on SVG document
 
             
             window.test = svgimage
@@ -428,6 +439,7 @@ export default class InputWidget {
             Draggable.create(".source", {               
                                 
                 bounds: (svg_navn=="fotball") ? {minX:-1850, maxX:-1100, minY:-500, maxY:150}: "#"+imid ,
+                dragResistance: -0.1,
                 
                 onDragLeave: function() {
                     //this.update();
@@ -534,24 +546,27 @@ export default class InputWidget {
                 },
                
                                 
-                onDrag: function() {
+                onDrag: function(e) {
                     var terskel = 4;
                     
                     if(cc.length==1 || this.x - cc[cc.length-1].x > terskel || this.x - cc[cc.length-1].x < -terskel || this.y - cc[cc.length-1].y > terskel || this.y - cc[cc.length-1].y < -terskel) {
                         cc[cc.length] = {'x': this.x, 'y': this.y, 'fig': this.target.id, 'event': 'move', 'tim': Date.now(), 'tdiff': ((Date.now() - cc[cc.length-1].tim)/1000), 'hit': null };
                         //console.log(this.target.id,'ny x og y -posisjon', cc[length].x, ' ', cc[length].y);
                         
-                        if(cc.length==1) console.log(this)
+                        // if(cc.length==1) console.log(this)
                     }
                     
-                    console.log(this);
+                    // console.log(this);
+                    // console.log(`pointer (x,y) = (${e.x},${e.y})`)
+                    // console.log(`object (x,y) = (${this.x},${this.y})`)
                     
                     
 
                 },                
 
                 onDragEnd: function(e) {
-                    // console.log(e)
+                    console.log("ONDRAGEND",e)
+                    console.log("THIS", this)
 
                     this.target.style.width  = "";
                     this.target.style.height  = "";                
