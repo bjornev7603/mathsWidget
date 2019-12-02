@@ -56,7 +56,7 @@ export default class InputWidget {
     // overwrite default values with values passed down from config
     // this.config.parameters = { ...parameters, ...config.ggbApplet }
     this.config = {
-      ggbApplet: { ...parameters, ...config.ggbApplet },
+      mathtask_Applet: { ...parameters, ...config.mathtask_Applet },
       feedback: config.feedback || null,
       vars: config.vars || []
     }
@@ -96,10 +96,12 @@ export default class InputWidget {
     this.updateAnswer(event)
 
 
-    var svg_navn, neste_svg,
+    var svg_navn, neste_svg
+   
+
     
-    oppgaver_navn ={     
-    veronso: [
+    let oppgaver_navn ={     
+      veronso: [
       '000_startside',
       '001_fotball5',
       '002_ans4',
@@ -136,33 +138,42 @@ export default class InputWidget {
       "oppdeling5", */
 
     ],
-    juliesg_l:[  
+    /* juliesg:[  
 
-      "task0",
-      "task1",
-      "task2",
-      "task3",
-      "task4",
-      "task5",
-      "task6",
-      "task7",
-      "task8",
-      "task9",
-      "task10",
-      "task11",
-      "task12",
-      "task13",
-      "task14",
-      "task15",
-      "task16",
-      "task17",
-      "task18",
-      "task19",
-      "task20",
-      "task21",
-      "lastpage",
+      "000-øvingsub",
+      "001-subitizing",
+      "002-subitizing",
+      "003-subitizing",
+      "004-subitizing",
+      "005-subitizing",
+      "006-subitizing",
+      "007-subitizing",
+      "008-subitizing",
+      "009-øvingsubdra",
 
-    ],
+
+      "010-subitizingdra",
+      "011-subitizingdra",
+      "012-subitizingdra",
+      "013-subitizingdra",
+      "014-subitizingdra",
+      
+
+      "015-telling1a.svg",
+      "016-telling1b.svg",
+
+      "017-telling2a",
+      "018-telling2b",
+
+
+      "020-trekant",
+      "021-kvadrat",
+      "022-rutenett",
+      "023-lastpage",
+      
+      
+
+    ], */
     juliesg:[  
       "kvadrat",
       "trekant",
@@ -230,14 +241,24 @@ export default class InputWidget {
 
 
 
+  var stud = this.config.mathtask_Applet.folder
+
+  let oppgaver_navn_from_json ={     
+    [stud]: [
+      this.config.mathtask_Applet.mathtask_Base64,      
+    ]
+  }
+
+
     //let item = Object.keys(oppgaver_navn)[0]
+    //Object.keys(oppgaver_navn_from_json).forEach(function (item) {
     Object.keys(oppgaver_navn).forEach(function (item) {
 
             
       //hvis ingen ting i url, bare index.html eller ingenting bak adresse
       if (task_paraval == null || task_paraval == "") {
         //hvis ikke oppgave oppgitt i url taskpara, og url inneholder katalogen veronica, julie eller andre på folk.ntnt.no
-        //om ikke på folk-server, settes defauilt oppgavekatalog (array) til 'andre'
+        //om ikke på folk-server, settes default oppgavekatalog (array) til 'andre'
         
           
 
@@ -259,7 +280,7 @@ export default class InputWidget {
             svg_navn = oppgaver_navn[item][0]
             neste_svg = oppgaver_navn[item][1]
 
-            aktuell_svgmappe = (item=="juliesg")? "./juliesg_matteapps" : "../../" + item + "/matteapps";
+            aktuell_svgmappe = (item=="juliesg")? "http://folk.ntnu.no/bjornev/matteoppgaver/juliesg_matteapps" : "http://folk.ntnu.no/" + item + "/matteapps";
           }
           else if(author_paraval == null){
             svg_navn = oppgaver_navn['andre'][0]
@@ -292,7 +313,7 @@ export default class InputWidget {
 
         else {
           //henter fra studentenes filområder
-          aktuell_svgmappe = (item=="juliesg")? "./juliesg_matteapps" : "../../" + item + "/matteapps";
+          aktuell_svgmappe = (item=="juliesg")? "http://folk.ntnu.no/bjornev/matteoppgaver/juliesg_matteapps" : "http://folk.ntnu.no/" + item + "/matteapps";
         }
       }
     })  
@@ -439,12 +460,12 @@ export default class InputWidget {
       SVG.select('.next').on('click', event=> {
 
         //Leser spørsmåltekst høyt
-        var sel_que = SVG.select(".speak").members
+        /* var sel_que = (SVG.select(".speak")!=null)? SVG.select(".speak").members: ""
         var readtext = event.currentTarget != null ? event.currentTarget.getAttribute('speech').trim() : ""       
         responsiveVoice.speak(readtext, "Norwegian Female", {
           pitch: 0.8,
           rate: 1.1
-        })
+        }) */
 
 
         //trykker på nesteknapp i matistikk rammeverket
