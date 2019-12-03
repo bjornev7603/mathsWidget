@@ -8,18 +8,18 @@ export default class SVGNumbersWidget {
     document.getElementById( this.divElementId ).style.height = '100%'; // h +"px"
 
 
-    //config = {svg_url: '....'}
-    /* let default_config = {
+    config = {svg_url: '....'}
+     let default_config = {
       svg_url: "streng",
-      mp3_base_url: "mappe hvor mp3'er er...",
+      mp3_base_url: "mappe hvor mp3'er er",
       viewBox: {
         x: 1024,
         y: 768
-      } */
+      }
       // orientation: 'landscape'
     }
 
-    this.config = {
+    configStructure = {
       ...default_config,
       ...config
     }
@@ -531,6 +531,12 @@ var matteWidget = {
   },
 
   configStructure: {
-    //inputType: 'number'
+    //inputType: 'number'    
+    svg_url: 'streng',
+    mp3_base_url: 'string',
+    viewBox: {
+      x: 'number',
+      y: 'number'
+    }
   }
 }
