@@ -78,7 +78,12 @@ export default class SVGNumbersWidget {
   }
 
   runscript() {
+    // reomve nav bar at bottom
+    customNav.init()
+
     // Get already created <div> element.
+
+
 
     let divElement = document.getElementById( this.divElementId )
     let inputElement = document.createElement( "inputxxx" )
@@ -480,7 +485,7 @@ export default class SVGNumbersWidget {
         //*************************************************************
         SVG.select( '.next' ).on( 'click', event => {
 
-          customNAV.next()
+          customNav.next()
 
           //Leser spørsmåltekst høyt
           /* var sel_que = (SVG.select(".speak")!=null)? SVG.select(".speak").members: ""
@@ -812,7 +817,7 @@ var matteWidget = {
    * External scripts the widget is dependent on, e.g., a cdn with JQuery.
    * This ensures that all dependencies are loaded only once per test.
    */
-  scripts: [ "https://cdn.geogebra.org/apps/deployggb.js" ],
+  scripts: [ "/libs/nav/customNav.js" ],
 
   /**
    * Import CSS-libraries to use. Be careful with this, since CSS is global
