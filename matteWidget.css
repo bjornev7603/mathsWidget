@@ -1,0 +1,36 @@
+.matte-widget {
+  touch-action: none;
+  height: 100%;
+  position: fixed;
+  width: 100%;
+  background-color: white;
+  top: 0px;
+  left: 0px;
+}
+.select {
+  cursor: pointer;
+}
+.framed,
+.framed > g > rect,
+.framed > rect,
+.framed > image,
+.framed > g > image,
+.framed > ellipse {
+  outline: 3px solid green;
+}
+
+.unframed,
+.unframed > g > rect,
+.unframed > rect,
+.unframed > image,
+.unframed > ellipse {
+  outline: 0px dotted green;
+}
+
+.re-appear {
+  visibility: visible;
+}
+
+.disappear {
+  visibility: hidden;
+}
