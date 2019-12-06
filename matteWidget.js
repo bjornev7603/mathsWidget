@@ -48,25 +48,14 @@ export default class MatteWidget {
 
     var countdown_msec = 10000; //1000 = sekund
     var timeout_msec = 3000;
-
-    //    var xdim = "100%",
-    //      ydim = "100%"
     var xdim = "100%";
     var ydim = "100%";
 
     var figuren = SVG( this.divElementId ).size( xdim, ydim );
     figuren.viewbox( 0, 0, this.config.viewBox.x, this.config.viewBox.y );
 
-    //responsive voice logo
-    // if ( svg_navn.includes( "000" ) ) {
-    //   document.getElementById( 'logo' ).style.display = "block"
-    // }
-    //hente svg bildeobjekt
-    // var ajax = new XMLHttpRequest()
-    // ajax.open( "GET", this.config.svgUrl, true )
-    // ajax.send()
 
-    // ajax.onload = e => {
+
     var parseSVG = svgResp => {
       //laster svg-bilde
       // let tmp = ajax.responseText
@@ -99,39 +88,13 @@ export default class MatteWidget {
         this.config.svgUrl.search( "[0-9]{3}" ),
         3
       );
-      this.audioEl.src = this.config.mp3BaseUrl + "speak" + num_in_url + ".m4a";
-      this.audioEl.play();
-      // const sound_el = document.createElement("audio");
-      // sound_el.id = "mp3sound";
-      // let src_el = document.createElement("source");
-      // src_el.src = this.config.mp3BaseUrl + "speak.m4a";
-      // src_el.type = "audio/mpeg";
-      // sound_el.appendChild(src_el);
-      // document.body.append(sound_el);
-      // sound_el.play();
-      // .then(function(a) {
-      //   console.log("audio:", a);
-      //   console.log(sound_el);
-      // }); //finner ikke domelement fordi ved lasting av side?
-
-      /* var sel_que = SVG.select(".speak").members;
-      var readtext =
-        sel_que.length != 0 && sel_que[0].node.getAttribute("speech") != null
-          ? sel_que[0].node.getAttribute("speech").trim()
-          : ""; */
-      //Snakker ved lasting av side,
-      //trenger brukerhandling for å unngå melding (deny/allow), så fjerner midl
-      /* responsiveVoice.speak(readtext, "Norwegian Female", {
-              pitch: 0.8,
-              rate: 1
-            })       */
+      this.audioEl.src = this.config.mp3BaseUrl + num_in_url + "speak" + ".m4a";
+      this.audioEl.play().catch( ( e ) => console.warn( e ) )
 
       var imid = svgimage.node.id;
-      //TweenLite.set("#"+imid, { touchAction: "pan-x"});
       TweenLite.set( "#" + imid, {
         touchAction: "manipulation"
       } );
-      //TweenLite.onchange(event)
 
       //brukes i "sub_dra" oppgave
       SVG.select( ".click_start_tallrekker" ).on( "click", event => {
@@ -141,10 +104,6 @@ export default class MatteWidget {
           event.currentTarget != null ?
           event.currentTarget.getAttribute( "speech" ).trim() :
           "";
-        /* responsiveVoice.speak( readtext, "Norwegian Female", {
-                  pitch: 0.8,
-                  rate: 1.1
-                } ) */
 
         //tre ormefigurer i Figurtall
         var svg_showfigures1 = SVG.select( ".show1" ).members;
@@ -178,7 +137,6 @@ export default class MatteWidget {
         //Snakker ved trykk neste knapp
         //***************************
         if ( event.currentTarget.classList.contains( "speak" ) ) {
-          // if(this.audioEl.ended || !this.audioEl.currentSrc)
 
           let num_in_url = this.config.svgUrl.substr(
             this.config.svgUrl.search( "[0-9]{3}" ),
@@ -186,32 +144,17 @@ export default class MatteWidget {
           );
 
           this.audioEl.src =
-            this.config.mp3BaseUrl + "speak" + num_in_url + "next.m4a";
-          this.audioEl.play().catch( () => {
+            this.config.mp3BaseUrl + num_in_url + "speak" + "next.m4a";
+          this.audioEl.play().catch( ( e ) => {
+            console.warn( e )
             customNav.next();
           } );
-          // const sound_el = document.createElement("audio");
-          // sound_el.id = "mp3sound";
-          // let src_el = document.createElement("source");
-          // src_el.src = this.config.local_config.mp3BaseUrl + "nextspeak.m4a";
-          // sound_el.appendChild(src_el);
-          // sound_el.play();
 
           this.audioEl.onended = customNav.next;
         } else {
           customNav.next();
         }
 
-        //Leser spørsmåltekst høyt
-        /* var sel_que = (SVG.select(".speak")!=null)? SVG.select(".speak").members: ""
-              var readtext = event.currentTarget != null ? event.currentTarget.getAttribute('speech').trim() : ""
-              responsiveVoice.speak(readtext, "Norwegian Female", {
-                pitch: 0.8,
-                rate: 1.1
-              }) */
-
-        //trykker på nesteknapp i matistikk rammeverket
-        // document.getElementById( 'setBtn' ).onclick = setAns
       } );
       //*************************************************************
 
@@ -248,7 +191,6 @@ export default class MatteWidget {
 
           // Time calculations for days, hours, minutes and seconds
           let seconds = Math.floor( ( distance % ( 1000 * 60 ) ) / 1000 );
-          //document.getElementById("klokke").innerHTML = seconds + "s "
 
           //fader ut objekt ved å endre opasitet vha nedtelling
           for ( var i = 0; i < fades.length; i++ ) {
@@ -259,7 +201,6 @@ export default class MatteWidget {
           }
           if ( distance < 0 ) {
             clearInterval( x );
-            //document.getElementById("klokke").innerHTML = "Tida er ute"
           }
         }, 500 ); //msek
 
@@ -276,41 +217,25 @@ export default class MatteWidget {
       //snakke
       SVG.select( ".speak" ).on( "click", event => {
         //henter mp3 fil fra en katalog, navn samsvarer med elementets klassenavn (eller flere)
-
-        /* var readtext =
-          event.currentTarget != null
-            ? event.currentTarget.getAttribute("speech").trim()
-            : ""; */
-        /* responsiveVoice.speak( readtext, "Norwegian Female", {
-                pitch: 0.8,
-                rate: 1
-              } ) */
-
         //*************************************
         //Snakker ved trykk ekorn eller på tall
         //*************************************
         if ( !event.currentTarget.classList.contains( "next" ) ) {
           //snakk på nesteknapp alleredehåntert i onnext
-          // const sound_el = document.createElement("audio");
-          // sound_el.id = "mp3sound";
-          // let src_el = document.createElement("source");
 
           let sel_str =
             event.currentTarget.classList.contains( "select" ) &&
             event.currentTarget.attributes[ "selectvalue" ] ?
             "select" + event.currentTarget.getAttribute( "selectvalue" ) :
             "";
-          // src_el.src = this.config.mp3BaseUrl + "speak" + sel_str + .m4a";
           let num_in_url = this.config.svgUrl.substr(
             this.config.svgUrl.search( "[0-9]{3}" ),
             3
           );
 
           this.audioEl.src =
-            this.config.mp3BaseUrl + "speak" + num_in_url + sel_str + ".m4a";
-          this.audioEl.play();
-          // sound_el.appendChild(src_el);
-          // sound_el.play();
+            this.config.mp3BaseUrl + num_in_url + "speak" + sel_str + ".m4a";
+          this.audioEl.play().catch( ( e ) => console.warn( e ) );
         }
       } )
       //******************************************
@@ -359,6 +284,7 @@ export default class MatteWidget {
         //aktuell_brikke.node.style.display = ""
       } )
       //***************************************
+      let widgetThis = this
 
       Draggable.create( ".source", {
         //setter bounds til å dekke alt (none svg'er med rare startverdier)
@@ -376,7 +302,6 @@ export default class MatteWidget {
         onDragStart: function ( e ) {},
 
         onDrag: function ( evt ) {
-          //console.log( `x: ${this.x}, y: ${this.y}` )
           var terskel = 4;
           let len = that.answer.length;
           if (
@@ -401,24 +326,13 @@ export default class MatteWidget {
               hit: null
             };
             that.updateAnswer( event );
-            //console.log(this.target.id,'ny x og y -posisjon', cc[length].x, ' ', cc[length].y);
           }
-          // console.log(this);
-          // console.log(`pointer (x,y) = (${e.x},${e.y})`)
-          // console.log(`object (x,y) = (${this.x},${this.y})`)
         },
 
         onDragEnd: function () {
           this.target.style.width = "";
           this.target.style.height = "";
           var i = targ1.members.length;
-          //  console.log(
-          //    this.target.id,
-          //    "ny x-posisjon" + that.x,
-          //    " ny y-posisjon" + that.y,
-          //    " x og y: ",
-          //    that.answer[ that.answer.length - 1 ]
-          //  )
           while ( --i > -1 ) {
             if ( this.hitTest( targ1.members[ i ].node ) ) {
               //skriver info om posisjon, tidspkt og target_id for treff av target
@@ -453,40 +367,24 @@ export default class MatteWidget {
                   scale: 0,
                   svgOrigin: t
                 } );
-              } else {
-                //console.log( "Target skal ikke sluke objekt" )
               }
-              //targ1.members[ i ].addClass( "highlight" )
 
               //***************************
               //Snakker ved treff av target
               //***************************
-              /* const sound_el = document.createElement("audio");
-              sound_el.id = "mp3sound";
-              let src_el = document.createElement("source"); */
 
-              let num_in_url = this.config.svgUrl.substr(
-                this.config.svgUrl.search( "[0-9]{3}" ),
+              let num_in_url = widgetThis.config.svgUrl.substr(
+                widgetThis.config.svgUrl.search( "[0-9]{3}" ),
                 3
               );
 
-              this.audioEl.src =
-                this.config.mp3BaseUrl +
-                "speak" +
+              widgetThis.audioEl.src =
+                widgetThis.config.mp3BaseUrl +
                 num_in_url +
+                "speak" +
                 "whenhit.m4a";
-              this.audioEl.play();
+              widgetThis.audioEl.play().catch( ( e ) => console.warn( e ) )
 
-              /* var sel_que = SVG.select(".speak_when_hit").members;
-              var readtext =
-                sel_que.length != 0 &&
-                sel_que[0].node.getAttribute("speech") != null
-                  ? sel_que[0].node.getAttribute("speech").trim()
-                  : ""; */
-              /* responsiveVoice.speak( readtext, "Norwegian Male", {
-                      pitch: 0.8,
-                      rate: 1
-                    } ) */
             } else {
               //skriver info om posisjon, tidspkt og target_id for treff av target
 
@@ -513,7 +411,6 @@ export default class MatteWidget {
 
 
 
-    console.log( this.config );
     fetch( this.config.svgUrl, {
         method: "GET",
         mode: "no-cors"
@@ -527,7 +424,6 @@ export default class MatteWidget {
 
   //Oppdaterer med hendelse
   updateAnswer( newAnswer ) {
-    // this.answer = newAnswer
     this.answer.push( newAnswer );
     this.onAnswer( this.answer );
   }
