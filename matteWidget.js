@@ -223,15 +223,31 @@ export default class MatteWidget {
         if ( !event.currentTarget.classList.contains( "next" ) ) {
           //snakk på nesteknapp alleredehåntert i onnext
 
-          let sel_str =
-            event.currentTarget.classList.contains( "select" ) &&
-            event.currentTarget.attributes[ "selectvalue" ] ?
-            "select" + event.currentTarget.getAttribute( "selectvalue" ) :
+          let numstr_in_url;
+          if ( event.currentTarget.attributes[ "selectvalue" ] ) {
+            numstr_in_url = event.currentTarget.attributes[ "selectvalue" ].value;
+            if (
+              event.currentTarget.attributes[ "selectvalue" ].value.search(
+                "[^0-9]+"
+              )
+            ) {
+              numstr_in_url = event.currentTarget.attributes[
+                  "selectvalue"
+                ].value
+                .substr( 0, 2 )
+                .trim();
+            }
+          }
+
+          let sel_str = event.currentTarget.classList.contains( "select" ) ?
+            "select" + numstr_in_url :
             "";
+          // src_el.src = this.config.mp3BaseUrl + "speak" + sel_str + .m4a";
           let num_in_url = this.config.svgUrl.substr(
             this.config.svgUrl.search( "[0-9]{3}" ),
             3
           );
+
 
           this.audioEl.src =
             this.config.mp3BaseUrl + num_in_url + "speak" + sel_str + ".m4a";
