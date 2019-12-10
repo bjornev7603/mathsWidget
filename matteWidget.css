@@ -11,6 +11,7 @@
   cursor: pointer;
 }
 .framed,
+.framed > text,
 .framed > g > rect,
 .framed > rect,
 .framed > image,
@@ -20,6 +21,7 @@
 }
 
 .unframed,
+.unframed > text,
 .unframed > g > rect,
 .unframed > rect,
 .unframed > image,
