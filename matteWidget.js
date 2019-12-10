@@ -124,6 +124,8 @@ export default class MatteWidget {
         //***************************
         //Snakker ved trykk neste knapp
         //***************************
+        this.onAnswer( this.answer )
+
         if ( event.currentTarget.classList.contains( "speak" ) ) {
           let num_in_url = this.config.svgUrl.substr(
             this.config.svgUrl.search( "[0-9]{3}" ),
@@ -139,6 +141,7 @@ export default class MatteWidget {
 
           this.audioEl.onended = customNav.next;
         } else {
+
           customNav.next();
         }
       } );
@@ -404,25 +407,6 @@ export default class MatteWidget {
                 "whenhit.m4a";
               widgetThis.audioEl.play().catch( e => console.warn( e ) );
             }
-            // else {
-            //   //skriver info om posisjon, tidspkt og target_id for treff av target
-
-            //   //sjekker om attributtet selectvalue er satt i svg, denne innehlder "fasit" i flervalg
-            //   let selval = this.target.attributes[ "selectvalue" ];
-
-            //   const event = {
-            //     x: this.x,
-            //     y: this.y,
-            //     obj: this.target == null ? "emp" : this.target.id,
-            //     val: selval == null ? "emp" : selval.value,
-            //     event: "dragend",
-            //     time: Date.now(),
-            //     tdiff: ( Date.now() - that.answer[ that.answer.length - 1 ].time ) /
-            //       1000,
-            //     hit: ""
-            //   };
-            //   that.updateAnswer( event );
-            // }
           }
         }
       } );
@@ -442,7 +426,7 @@ export default class MatteWidget {
   //Oppdaterer med hendelse
   updateAnswer( newAnswer ) {
     this.answer.push( newAnswer );
-    this.onAnswer( this.answer );
+    // this.onAnswer( this.answer );
   }
 }
 
