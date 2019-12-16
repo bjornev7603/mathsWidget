@@ -3,7 +3,7 @@
 
 export default class MatteWidget {
   // class MatteWidget {
-  constructor( divElementId, config, answer = null, onAnswer ) {
+  constructor(divElementId, config, answer = null, onAnswer) {
     this.divElementId = divElementId;
     const default_config = {
       svgUrl: "streng",
@@ -20,289 +20,202 @@ export default class MatteWidget {
     this.answer = answer || [];
     this.onAnswer = onAnswer;
     this.audioEl = new Audio();
-    this.timerInvoked = false;
+    this.timerInvoked = false; //brukes for å anslå om allerede trykket på timer-objekt
+
+    customNav.init();
+    document.getElementById(this.divElementId).classList.add("matte-widget");
+
+    this.svgelement = SVG(this.divElementId).size("100%", "100%");
+    this.svgelement.viewbox(0, 0, this.config.viewBox.x, this.config.viewBox.y);
+    this.width_svg = "100%";
+    this.height_svg = "100%";
+    this.targets;
+    this.countdown_msec = 10000;
+    this.timeout_msec = 3000;
+
     this.runscript();
   }
 
   runscript() {
-    // reomve nav bar at bottom
-    customNav.init();
-    document.getElementById( this.divElementId ).classList.add( "matte-widget" );
-
     // TODO: Handle case when answer is provided from backend, atm just console log...
-    if ( this.answer.length ) {
-      console.log( "DEBUG: got answer:", this.answer );
+    if (this.answer.length) {
+      console.log("DEBUG: got answer:", this.answer);
     }
-
-
-
-    var countdown_msec = 10000; //1000 = sekund
-    var timeout_msec = 3000;
-    var xdim = "100%";
-    var ydim = "100%";
-
-    var figuren = SVG( this.divElementId ).size( xdim, ydim );
-    figuren.viewbox( 0, 0, this.config.viewBox.x, this.config.viewBox.y );
-
     var parseSVG = svgResp => {
       //laster svg-bilde
-      // let tmp = ajax.responseText
-      //console.log(svgResp)
       let tmp = svgResp;
       var parser = new DOMParser();
-      var doc = parser.parseFromString( tmp, "image/svg+xml" );
+      var doc = parser.parseFromString(tmp, "image/svg+xml");
+      doc.querySelector("svg").setAttribute("width", this.width_svg);
+      doc.querySelector("svg").setAttribute("height", this.height_svg);
       window.svgdoc = doc;
-
-      //lagrer "this" (widgets overordnede variabler) til "that", så de er tilgjengelige inne i funksjoner
-      var that = this;
-
-      doc.querySelector( "svg" ).setAttribute( "width", "100%" );
-      doc.querySelector( "svg" ).setAttribute( "height", "100%" );
-
       var oSerializer = new XMLSerializer();
-      var sXML = oSerializer.serializeToString( doc );
-      var svgimage = figuren.svg( sXML ); // put loaded file on SVG document
+      var sXML = oSerializer.serializeToString(doc);
+      var svgimage = this.svgelement.svg(sXML); // put loaded file on SVG document
+      //window.test = svgimage;
+      this.targets = SVG.select(".target");
 
-      window.test = svgimage;
-      var targ1 = SVG.select( ".eat" );
-      var src1 = SVG.select( ".source" );
+      //lagrer "this" (widgets overordnede variabler) til "widgetThis", så de er tilgjengelige inne i funksjoner
+      let widgetThis = this;
 
-      //Leser spørsmåltekst høyt
+      //henter svg toppnode til tweenlite touch action
+      var imid = svgimage.node.id;
+      TweenLite.set("#" + imid, {
+        touchAction: "manipulation"
+      });
 
       //***************************
       //Snakker ved lasting av side
       //***************************
-      let num_in_url = this.config.svgUrl.substr(
-        this.config.svgUrl.search( "[0-9]{3}" ),
-        3
-      );
-      this.audioEl.src = this.config.mp3BaseUrl + num_in_url + "speak" + ".m4a";
-      this.audioEl.play().catch( e => console.warn( e ) );
+      this.audioEl.src = this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
+      this.audioEl.play().catch(e => console.warn(e));
 
-      var imid = svgimage.node.id;
-      TweenLite.set( "#" + imid, {
-        touchAction: "manipulation"
-      } );
+      /************** */
+      //KLIKK-EVENTS
+      /************** */
 
-      //brukes i "sub_dra" oppgave
-      SVG.select( ".click_start_tallrekker" ).on( "click", event => {
-        //Leser spørsmåltekst høyt
-        var sel_que = SVG.select( ".speak" ).members;
-        var readtext =
-          event.currentTarget != null ?
-          event.currentTarget.getAttribute( "speech" ).trim() :
-          "";
-
-        //tre ormefigurer i Figurtall
-        var svg_showfigures1 = SVG.select( ".show1" ).members;
-        var svg_showfigures2 = SVG.select( ".show2" ).members;
-        var svg_showfigures3 = SVG.select( ".show3" ).members;
-        var x = 0;
-
-        let mintimer = setTimeout( function () {
-          [ ...svg_showfigures1 ].forEach( node => {
-            node.node.style.display = "";
-          } );
-        }, timeout_msec );
-
-        mintimer = setTimeout( function () {
-          [ ...svg_showfigures2 ].forEach( node => {
-            node.node.style.display = "";
-          } );
-        }, timeout_msec * 2 );
-
-        mintimer = setTimeout( function () {
-          [ ...svg_showfigures3 ].forEach( node => {
-            node.node.style.display = "";
-          } );
-        }, timeout_msec * 3 );
-      } );
       //*************************************************************
       //TRYKK PÅ NESTE-KNAPP
       //*************************************************************
-      SVG.select( ".next" ).on( "click", event => {
+      SVG.select(".next").on("click", event => {
         //***************************
         //Snakker ved trykk neste knapp
         //***************************
-        this.onAnswer( this.answer )
+        this.onAnswer(this.answer);
 
-        if ( event.currentTarget.classList.contains( "speak" ) ) {
-          let num_in_url = this.config.svgUrl.substr(
-            this.config.svgUrl.search( "[0-9]{3}" ),
-            3
-          );
-
+        if (event.currentTarget.classList.contains("speak")) {
           this.audioEl.src =
-            this.config.mp3BaseUrl + num_in_url + "speak" + "next.m4a";
-          this.audioEl.play().catch( e => {
-            console.warn( e );
+            this.config.mp3BaseUrl + this.getFileNumstr() + "next.m4a";
+          this.audioEl.play().catch(e => {
+            console.warn(e);
             customNav.next();
-          } );
+          });
 
           this.audioEl.onended = customNav.next;
         } else {
-
           customNav.next();
         }
-      } );
-      //*************************************************************
+      });
 
-      //brukes i subitize_dra
-      //teller ned fra x sekund (synlig nedtelling og brikker som forsvinner etter x sek's nedtelling )
-      //Kan flytte nedtelling til onDragStart hvis nedtelling skal starte når brikkene røres
-      SVG.select( ".start_timer" ).on( "click", event => {
-        //hvis satt i svg felt "once" at timer ikke kan startes kan man bare trykke på timer-sol EN gang
+      //*************************************************************
+      //Trykk på et objekt av timerklasse. Teller ned fra x sekund (synlig nedtelling og brikker som forsvinner etter x sekund)
+      //Kode gjør:
+      //1. Anslår ant sekund og starter timer
+      //2. Fading vha opasitetsendring
+      //3. Skjuler eller viser prikker i brikkeoppgaver
+      SVG.select(".start_timer").on("click", event => {
+        //hvis attr "single_attempt" satt i svg for at Timer ikke kan restartes
         if (
           this.timerInvoked == false ||
-          event.currentTarget.attributes[ "single_attempt" ] == null ||
-          ( event.currentTarget.attributes[ "single_attempt" ] != null &&
-            event.currentTarget.attributes[ "single_attempt" ].value.trim() !=
-            "true" )
+          event.currentTarget.attributes["single_attempt"] == null ||
+          (event.currentTarget.attributes["single_attempt"] != null &&
+            event.currentTarget.attributes["single_attempt"].value.trim() !=
+              "true")
         ) {
-          this.timerInvoked = true;
+          this.timerInvoked = true; //brukes for å anslå om allerede trykket på timer-objekt
 
-          //henter element av klassen fade, dette settes med full opasitet - synlig
-          var fades = SVG.select( ".fade" ).members;
-          for ( var i = 0; i < fades.length; i++ ) {
-            SVG.select( ".fade" ).members[ i ].node.style.opacity = 1;
+          //valgfri fading av objekt: henter element av klassen fade, dette settes med full opasitet - synlig
+          var fades = SVG.select(".fade").members;
+          for (var i = 0; i < fades.length; i++) {
+            SVG.select(".fade").members[i].node.style.opacity = 1;
           }
 
-          var timers = SVG.select( ".start_timer" ).members;
-          for ( var i = 0; i < timers.length; i++ ) {
-            countdown_msec =
-              timers[ i ].node.attributes[ "countdown_sec" ] != null ?
-              timers[ i ].node.attributes[ "countdown_sec" ].value * 1000 :
-              countdown_msec;
+          //henter timer(e) fra svg-fil og henter info om varighet eller default varighet
+          var timers = SVG.select(".start_timer").members;
+          for (var i = 0; i < timers.length; i++) {
+            widgetThis.countdown_msec =
+              timers[i].node.attributes["countdown_sec"] != null
+                ? //henter timer-varighet i svg-fil hvis satt, ellers fra widgetvariabel
+                  timers[i].node.attributes["countdown_sec"].value * 1000
+                : widgetThis.countdown_msec;
           }
 
           //gjør prikker synlige i timerens x antall sek, ved å skifte css klasse
-          var svg_pricks = SVG.select( ".disappear" ).members;
-          for ( var i = 0; i < svg_pricks.length; i++ ) {
-            svg_pricks[ i ].node.classList.toggle( "disappear", false );
-            svg_pricks[ i ].node.classList.toggle( "re-appear", true );
+          var svg_pricks = SVG.select(".disappear").members;
+          for (var i = 0; i < svg_pricks.length; i++) {
+            svg_pricks[i].node.classList.toggle("disappear", false);
+            svg_pricks[i].node.classList.toggle("re-appear", true);
           }
 
-          var countDownDate = new Date().getTime() + countdown_msec;
-          var x = setInterval( function () {
-            var now = new Date().getTime();
+          //viser tid som er igjen ved å fade ut et objekt av klassen "fade"et av timer-varigheten
+          var countDownDate = new Date().getTime() + widgetThis.countdown_msec;
+          var x = setInterval(function() {
+            let now = new Date().getTime();
             // Find the distance between now and the count down date
-            var distance = countDownDate - now;
+            let distance = countDownDate - now;
 
             // Time calculations for days, hours, minutes and seconds
-            let seconds = Math.floor( ( distance % ( 1000 * 60 ) ) / 1000 );
+            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
             //fader ut objekt ved å endre opasitet vha nedtelling
-            for ( var i = 0; i < fades.length; i++ ) {
-              var fadeto = fades[ i ].node.classList.contains( "start_timer" ) ?
-                0.5 :
-                0.33;
-              fades[ i ].node.style.opacity = 1 - ( 1 - fadeto ) / ( seconds + 1 );
+            for (var i = 0; i < fades.length; i++) {
+              var fadeto = fades[i].node.classList.contains("start_timer")
+                ? 0.5
+                : 0.33;
+              fades[i].node.style.opacity = 1 - (1 - fadeto) / (seconds + 1); //algoritme for fading
             }
-            if ( distance < 0 ) {
-              clearInterval( x );
+            if (distance < 0) {
+              clearInterval(x);
             }
-          }, 500 ); //msek
+          }, 500); //msek
 
           //Etter noen sekund forsvinner brikkeprikkene (blir hvite)
-          let mintimer = setTimeout( function () {
-            var svg_pricks = SVG.select( ".re-appear" ).members;
-            for ( var i = 0; i < svg_pricks.length; i++ ) {
-              svg_pricks[ i ].node.classList.toggle( "disappear", true );
-              svg_pricks[ i ].node.classList.toggle( "re-appear", false );
+          let mintimer = setTimeout(function() {
+            var svg_pricks = SVG.select(".re-appear").members;
+            for (var i = 0; i < svg_pricks.length; i++) {
+              svg_pricks[i].node.classList.toggle("disappear", true);
+              svg_pricks[i].node.classList.toggle("re-appear", false);
             }
-            clearTimeout( mintimer );
-          }, countdown_msec );
+            clearTimeout(mintimer);
+          }, widgetThis.countdown_msec);
         }
-      } );
+      });
 
-      //snakke
-      SVG.select( ".speak" ).on( "click", event => {
+      //******************************************************* */
+      //få objekt til å snakke når de trykkes på,
+      //spille mp3-filer m bestemte navn [tresifra oppgkode][speak][event][evtl selectverdi]
+      //******************************************************* */
+      SVG.select(".speak").on("click", event => {
         //henter mp3 fil fra en katalog, navn samsvarer med elementets klassenavn (eller flere)
         //*************************************
-        //Snakker ved trykk ekorn eller på tall
+        //Snakker ved trykk ekorn eller på flervalg(select)element
         //*************************************
-        if ( !event.currentTarget.classList.contains( "next" ) ) {
-          //snakk på nesteknapp alleredehåntert i onnext
+        if (!event.currentTarget.classList.contains("next")) {
+          //snakk på nesteknapp allerede håndtert i onNext
 
-          let numstr_in_url;
-          if ( event.currentTarget.attributes[ "selectvalue" ] ) {
-            numstr_in_url = event.currentTarget.attributes[ "selectvalue" ].value;
-            if (
-              event.currentTarget.attributes[ "selectvalue" ].value.search(
-                "[^0-9]+"
-              )
-            ) {
-              numstr_in_url = event.currentTarget.attributes[
-                  "selectvalue"
-                ].value
-                .substr( 0, 2 )
-                .trim();
-            }
-          }
-
-          let sel_str = event.currentTarget.classList.contains( "select" ) ?
-            "select" + numstr_in_url :
-            "";
-          // src_el.src = this.config.mp3BaseUrl + "speak" + sel_str + .m4a";
-          let num_in_url = this.config.svgUrl.substr(
-            this.config.svgUrl.search( "[0-9]{3}" ),
-            3
-          );
-
+          //selve lydfilnavnet
           this.audioEl.src =
-            this.config.mp3BaseUrl + num_in_url + "speak" + sel_str + ".m4a";
-          this.audioEl.play().catch( e => console.warn( e ) );
+            this.config.mp3BaseUrl +
+            this.getFileNumstr() +
+            this.getSelstr(event.currentTarget) + //hvis flervalg (select), hentes evt verdi som skal tales
+            ".m4a";
+          this.audioEl.play().catch(e => console.warn(e));
         }
-      } );
-      //******************************************
-      //KLIKK HENDELSER
+      });
 
-      //Klikk på tall i Tallrekker1
-      SVG.select( ".select" ).on( "click", event => {
-        var memb = document.getElementsByClassName( "select" );
-        for ( var i = 0; i < memb.length; i++ ) {
-          memb[ i ].classList.toggle( "framed", false );
-          memb[ i ].classList.toggle( "unframed", false );
+      //******************************************************* */
+      //Klikk på flervalg(select) medfører ramme rundt elementet, og loggføring (av x, y, objekt og verdi i selectelement)
+      //******************************************************* */
+      SVG.select(".select").on("click", event => {
+        var memb = document.getElementsByClassName("select");
+        for (var i = 0; i < memb.length; i++) {
+          memb[i].classList.toggle("framed", false);
+          memb[i].classList.toggle("unframed", false);
         }
-        event.currentTarget.classList.toggle( "framed", true );
+        event.currentTarget.classList.toggle("framed", true);
+        //logger hendelser
+        this.setEventdata("click", event, "", widgetThis);
+      });
 
-        let sel_obj = event.currentTarget;
-        let selval = event.currentTarget.attributes[ "selectvalue" ];
-
-        const eventen = {
-          x: event.x,
-          y: event.y,
-          obj: sel_obj == null ? "emp" : sel_obj.id,
-          val: selval == null ? "emp" : selval.value,
-
-          event: "click",
-          time: Date.now(),
-          tdiff: ( Date.now() - this.answer[ this.answer.length - 1 ].time ) / 1000,
-          hit: null
-        };
-        this.updateAnswer( eventen );
-      } );
-      //TRYKK PÃ… TALL FÃ…R FRAM VISUELLE TALLBRIKKER
-      SVG.select( ".click_visuelletall" ).on( "click", event => {
-        var alle_brikker = SVG.select( ".brikker" ).members;
-        [ ...alle_brikker ].forEach( node => {
-          node.node.style.display = "none";
-        } );
-        var mitt_aktuelle_tall = event.currentTarget.id.split( "_" )[ 1 ];
-        var aktuell_brikke = SVG.select( "#brik" + mitt_aktuelle_tall )
-          .members[ 0 ];
-        aktuell_brikke.node.style.display = "";
-      } );
-      //SKRIV INN TALL
-      SVG.select( ".writenumber" ).on( "click", event => {
-        var ttt = ( event.currentTarget.innerHTML =
-          "<div contenteditable='true'><text>Innhold</text></div>" );
-        //aktuell_brikke.node.style.display = ""
-      } );
+      //SKRIV INN TALL (brukes hvis behov for å legge til noe i et tekstfelt generert dynamisk ved klikk på noe i svg)
+      SVG.select(".writenumber").on("click", event => {
+        var t = (event.currentTarget.innerHTML =
+          "<div contenteditable='true'><text>Innhold</text></div>");
+      });
       //***************************************
-      let widgetThis = this;
-      let event
-      Draggable.create( ".source", {
+      //***************************************
+      let event;
+      Draggable.create(".source", {
         //setter bounds til å dekke alt (none svg'er med rare startverdier)
         bounds: {
           minX: -4000,
@@ -311,29 +224,21 @@ export default class MatteWidget {
           maxY: 1024
         },
 
-        onDragLeave: function () {
+        onDragLeave: function() {
           //this.update();
         },
 
-        onDragStart: function ( e ) {
-          let sel_obj = this.target;
-          let selval = this.target.attributes[ "selectvalue" ];
-          event = {
-            x: [ this.x ],
-            y: [ this.y ],
-            obj: sel_obj == null ? "emp" : sel_obj.id,
-            val: selval == null ? "emp" : selval.value,
-            event: "move",
-            time: [ Date.now() ],
-            hit: null
-          };
+        onDragStart: function(e) {
+          //logger hendelser
+          event = widgetThis.setEventdata("move", this, "", widgetThis);
+          let g = 3;
         },
 
-        onDrag: function ( evt ) {
-          var terskel = 4;
-          let len = that.answer.length;
-          let lastX = event.x[ event.x.length - 1 ],
-            lastY = event.y[ event.y.length - 1 ]
+        onDrag: function(evt) {
+          var terskel = 6;
+          let len = widgetThis.answer.length;
+          let lastX = event.x[event.x.length - 1],
+            lastY = event.y[event.y.length - 1];
           if (
             len == 1 ||
             this.x - lastX > terskel ||
@@ -341,93 +246,138 @@ export default class MatteWidget {
             this.y - lastY > terskel ||
             this.y - lastY < -terskel
           ) {
-            event.x.push( this.x )
-            event.y.push( this.y )
-            event.time.push( Date.now() )
-            // that.updateAnswer(event);
+            event.x.push(this.x);
+            event.y.push(this.y);
+            event.time.push(Date.now());
           }
         },
 
-        onDragEnd: function () {
-          event.x.push( this.x )
-          event.y.push( this.y )
-          event.time.push( Date.now() )
-          that.updateAnswer( event )
+        onDragEnd: function(e) {
+          event.x.push(this.x);
+          event.y.push(this.y);
+          event.time.push(Date.now());
+          widgetThis.updateAnswer(event);
 
           this.target.style.width = "";
           this.target.style.height = "";
-          var i = targ1.members.length;
-          while ( --i > -1 ) {
-            if ( this.hitTest( targ1.members[ i ].node ) ) {
+          var i = widgetThis.targets.members.length;
+          //Ved treff av et target
+          while (--i > -1) {
+            if (this.hitTest(widgetThis.targets.members[i].node)) {
               //skriver info om posisjon, tidspkt og target_id for treff av target
-              let selval = this.target.attributes[ "selectvalue" ];
+              let selval =
+                this.target.attributes["selectvalue"] != null
+                  ? this.target.attributes["selectvalue"].value
+                  : "";
+              //logger hendelser
+              widgetThis.setEventdata(
+                "hit",
+                this,
+                widgetThis.targets.members[i].node.id,
+                widgetThis
+              );
 
-              const hitEvent = {
-                x: this.x,
-                y: this.y,
-                obj: this.target == null ? "emp" : this.target.id,
-                val: selval == null ? "emp" : selval.value,
-                event: "hit",
-                time: Date.now(),
-                tdiff: ( Date.now() - that.answer[ that.answer.length - 1 ].time ) /
-                  1000,
-                hit: targ1.members[ i ].node.id
-              };
-              that.updateAnswer( hitEvent );
-
-              var pos = targ1.members[ i ].bbox();
+              var pos = widgetThis.targets.members[i].bbox();
               var t = pos.x2 * 0.97 + " " + pos.cy * 0.95;
-              //console.log(t)
 
               //ser om klassen disappear finnes i src svg-objekt
-              var disappear = targ1.members[ 0 ].node.classList.contains( "eat" ) ?
-                true :
-                false;
-              if ( disappear ) {
-                TweenLite.to( this.target, 0.1, {
+              var disappear = widgetThis.targets.members[
+                i
+              ].node.classList.contains("eat")
+                ? true
+                : false;
+              if (disappear) {
+                TweenLite.to(this.target, 0.1, {
                   opacity: 0,
                   scale: 0,
                   svgOrigin: t
-                } );
+                });
               }
 
               //***************************
               //Snakker ved treff av target
               //***************************
-
-              let num_in_url = widgetThis.config.svgUrl.substr(
-                widgetThis.config.svgUrl.search( "[0-9]{3}" ),
-                3
-              );
-
               widgetThis.audioEl.src =
                 widgetThis.config.mp3BaseUrl +
-                num_in_url +
-                "speak" +
-                "whenhit.m4a";
-              widgetThis.audioEl.play().catch( e => console.warn( e ) );
+                widgetThis.getFileNumstr() +
+                "hit.m4a";
+              widgetThis.audioEl.play().catch(e => console.warn(e));
             }
           }
         }
-      } );
+      });
     };
 
-    fetch( this.config.svgUrl, {
-        method: "GET",
-        mode: "no-cors"
-      } )
-      .then( resp => resp.text() )
-      .then( svg => {
-        //  console.log("response from fetch:", svg)
-        parseSVG( svg );
-      } );
+    fetch(this.config.svgUrl, {
+      method: "GET",
+      mode: "no-cors"
+    })
+      .then(resp => resp.text())
+      .then(svg => {
+        parseSVG(svg);
+      });
   }
 
   //Oppdaterer med hendelse
-  updateAnswer( newAnswer ) {
-    this.answer.push( newAnswer );
+  updateAnswer(newAnswer) {
+    this.answer.push(newAnswer);
     // this.onAnswer( this.answer );
   }
+
+  //logger pos x|y, obj, val, ev_type, etc
+  //para ev_type, eventobj (x|y verdi), objekt, widget (for variabler)
+  setEventdata = (evtype, ev, hitobj, w_this) => {
+    let an = w_this.answer;
+    let trgobj;
+    if (ev.currentTarget != null) trgobj = ev.currentTarget;
+    else if (ev.target != null) trgobj = ev.target;
+    else trgobj = "";
+
+    const eventen = {
+      x: evtype != "move" ? ev.x : [ev.x],
+      y: evtype != "move" ? ev.y : [ev.y],
+      obj: trgobj.id != null ? trgobj.id : "emp",
+      val:
+        trgobj.attributes["selectvalue"] == null
+          ? "emp"
+          : trgobj.attributes["selectvalue"].value,
+
+      event: evtype,
+      time: evtype != "move" ? Date.now() : [Date.now()],
+      tdiff:
+        evtype != "move" &&
+        an != null &&
+        an[an.length - 1] &&
+        an[an.length - 1].time != null
+          ? (Date.now() -
+              an[an.length - 1].time[an[an.length - 1].time.length - 1]) /
+            1000
+          : "",
+      hit: hitobj
+    };
+    w_this.updateAnswer(eventen);
+    //.catch(e => console.warn("error when logging!"));
+    return eventen;
+  };
+
+  //hente tre første siffer i filnavn
+  getFileNumstr = () => {
+    return this.config.svgUrl.substr(this.config.svgUrl.search("[0-9]{3}"), 3);
+  };
+
+  //flervalg(select)element hentes fra streng
+  getSelstr = trg => {
+    let num_in_url = "";
+    if (
+      trg.attributes["selectvalue"] &&
+      trg.classList.contains("select") &&
+      trg.attributes["selectvalue"].value.search("[^0-9]+")
+    ) {
+      return "select" + trg.attributes["selectvalue"].value.substr(0, 2).trim();
+    } else {
+      return num_in_url;
+    }
+  };
 }
 
 var matteWidget = {
@@ -439,7 +389,7 @@ var matteWidget = {
     "https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/utils/Draggable.min.js"
   ],
 
-  links: [ "/widgets/css/matteWidget.css" ],
+  links: ["/widgets/css/matteWidget.css"],
 
   widgetClass: MatteWidget,
   contributesAnswer: true,
