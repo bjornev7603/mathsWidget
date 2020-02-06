@@ -1,7 +1,8 @@
 {
-  "svgUrl": "/svgfiler/monkeyeatbanana.svg",
+  "svgUrl": "/svgfiler/001_fotball5.svg",
+  "mp3BaseUrl": "/mp3/",
   "viewBox": {
-    "x": 768,
-    "y": 1024
+    "x": 1024,
+    "y": 768
   }
 }

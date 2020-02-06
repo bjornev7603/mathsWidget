@@ -3,8 +3,16 @@
 
 export default class MatteWidget {
   // class MatteWidget {
-  constructor(divElementId, config, answer = null, onAnswer) {
+  constructor(divElementId, config, answer = null, onAnswer, options) {
     this.divElementId = divElementId;
+
+    //playback events
+    this.eventHandlers = {
+      move: arg => this.replay_svg(arg),
+      hit: arg => this.replay_svg(arg)
+      //RESET: () => this.api.reset()
+    };
+
     const default_config = {
       svgUrl: "streng",
       mp3BaseUrl: "mappe hvor mp3'er er",
@@ -33,7 +41,130 @@ export default class MatteWidget {
     this.countdown_msec = 10000;
     this.timeout_msec = 3000;
 
+    this.vars = {};
+    this.answer = answer || { log: [], states: [] };
+    if (this.answer.log !== undefined) this.answer = this.answer.log;
+
+    //this.onAnswer = onAnswer;
+    if (options.playback) {
+      this.playback = options.playback;
+    }
+
+    this.buildDOM();
+    //this.config.ggbApplet.appletOnLoad = this.appletOnLoad;
+
+    if (!this.playback) {
+      //this.setAns();
+    } else {
+      this.state = {
+        next: this.answer[0].event,
+
+        current: 0,
+        forward: () => {
+          let action = this.state.next,
+            index = this.state.current;
+          this.state.current = (this.state.current + 1) % this.answer.length;
+          this.state.next = this.answer[this.state.current].event;
+
+          return { action: action, index: index };
+        }
+      };
+    }
+
     this.runscript();
+  }
+
+  replay_svg(arg) {
+    let logg = "",
+      xx = "",
+      yy = "";
+    logg = this.answer[arg];
+
+    switch (logg.event) {
+      case "move":
+        
+        //let mem = svg.members;
+
+        if (typeof logg.x === "object") {
+          let svg_obj = SVG().select("#" + logg.obj);
+          for (let i = 0; i < logg.x.length; i++) {
+
+            
+
+            //for(let svgobj of svg_objs) {
+              //if(svgobj == logg.obj) {
+
+              //}
+            }
+            let xval = logg.x[i];
+            let yval = logg.y[i];
+          }
+        }
+        xx = typeof logg.x === "object" ? logg.x[logg.x.length - 1] : logg.x;
+        yy = typeof logg.y === "object" ? logg.y[logg.y.length - 1] : logg.y;
+        //this.api.evalCommand(logg.objectName + '= (' + xx + ', ' + yy + ')')
+        break;
+    }
+  }
+
+  buildDOM() {
+    if (this.playback) this.buildPlayback();
+    //else this.buildMenu();
+
+    let parent = document.getElementById(this.divElementId);
+    //parent.setAttribute("height", `${this.config.ggbApplet.height}px`);
+    let ggb = document.createElement("div");
+    //ggb.classList.add("widget-box");
+    //ggb.id = this.ggbId;
+
+    parent.append(ggb);
+  }
+
+  buildPlayback() {
+    const menuDivElement = document.createElement("div");
+    menuDivElement.classList.add("drawing-playback-container");
+
+    const ControlDivElement = document.createElement("div");
+    ControlDivElement.classList.add("drawing-playback-container");
+
+    //navigating between answers (states)
+    const actions = [
+      {
+        name: "",
+        handler: () => {
+          let toggle = false;
+          let { action, index } = this.state.forward();
+          if (index == this.answer.length - 1) toggle = true;
+          //if (index == 0) this.eventHandlers.CLEAR_ANIMATIONS();
+          this.eventHandlers[action](index);
+          return toggle;
+        },
+        icon: "mdi-skip-next",
+        reset_icon: "mdi-skip-backward"
+      }
+    ];
+    for (let tool of actions) {
+      let div = document.createElement("div");
+      div.classList.add("playback-tool");
+      // div.style.backgroundColor = '#000'
+      let i = document.createElement("i");
+      i.classList.add("mdi", tool.icon);
+      div.append(i);
+      ControlDivElement.append(div);
+      div.addEventListener("click", () => {
+        let toggle = tool.handler();
+        if (toggle) {
+          i.classList.remove(tool.icon);
+          i.classList.add(tool.reset_icon);
+        } else if (i.classList.contains(tool.reset_icon)) {
+          i.classList.remove(tool.reset_icon);
+          i.classList.add(tool.icon);
+        }
+      });
+    }
+    const divEl = document.getElementById(this.divElementId);
+    menuDivElement.append(ControlDivElement);
+    divEl.appendChild(menuDivElement);
   }
 
   runscript() {
@@ -41,6 +172,22 @@ export default class MatteWidget {
     if (this.answer.length) {
       console.log("DEBUG: got answer:", this.answer);
     }
+
+    // runscript(
+    //   parseSVG = svgResp =>
+    //     audioEl.play()
+    //     SVG.select(".next").on("click"
+    //     SVG.select(".start_timer").on("click"
+    //       setTimeout()
+    //     SVG.select(".speak").on("click"
+    //     SVG.select(".select").on("click"
+    //     Draggable.create(".source"
+    //       onDragStart
+    //       onDrag
+    //       onDragEnd
+    //         hitTest()
+    // )
+
     var parseSVG = svgResp => {
       //laster svg-bilde
       let tmp = svgResp;
@@ -54,6 +201,8 @@ export default class MatteWidget {
       var svgimage = this.svgelement.svg(sXML); // put loaded file on SVG document
       //window.test = svgimage;
       this.targets = SVG.select(".target");
+
+      //gå gjennom alle objekt som har klasser knyttet til seg. Finne initiell x og y posisjon (state)
 
       //lagrer "this" (widgets overordnede variabler) til "widgetThis", så de er tilgjengelige inne i funksjoner
       let widgetThis = this;
@@ -105,12 +254,11 @@ export default class MatteWidget {
       //3. Skjuler eller viser prikker i brikkeoppgaver
       SVG.select(".start_timer").on("click", event => {
         //hvis attr "single_attempt" satt i svg for at Timer ikke kan restartes
+        let att = event.currentTarget.attributes["single_attempt"];
         if (
           this.timerInvoked == false ||
-          event.currentTarget.attributes["single_attempt"] == null ||
-          (event.currentTarget.attributes["single_attempt"] != null &&
-            event.currentTarget.attributes["single_attempt"].value.trim() !=
-              "true")
+          att == null ||
+          (att != null && att.value.trim() != "true")
         ) {
           this.timerInvoked = true; //brukes for å anslå om allerede trykket på timer-objekt
 
@@ -231,7 +379,6 @@ export default class MatteWidget {
         onDragStart: function(e) {
           //logger hendelser
           event = widgetThis.setEventdata("move", this, "", widgetThis);
-          let g = 3;
         },
 
         onDrag: function(evt) {
@@ -321,7 +468,7 @@ export default class MatteWidget {
   //Oppdaterer med hendelse
   updateAnswer(newAnswer) {
     this.answer.push(newAnswer);
-    // this.onAnswer( this.answer );
+    this.onAnswer(this.answer);
   }
 
   //logger pos x|y, obj, val, ev_type, etc

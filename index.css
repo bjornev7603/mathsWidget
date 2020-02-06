@@ -19,19 +19,17 @@ textarea {
   margin: 4px;
 }
 
-
 svgcontainer {
-  display:block;
-  position:relative;
-  background:#1d1d1d;
-  
-  margin:20px auto;
+  display: block;
+  position: relative;
+  background: #1d1d1d;
+
+  margin: 20px auto;
 }
 
 html {
   touch-action: pan-y;
 }
-
 
 .grid-container {
   display: grid;
@@ -57,10 +55,7 @@ html {
   height: 76px;
   line-height: 76px;
   display: "";
-
 }
-
-
 
 /* button {
   padding: 10px 10px;
