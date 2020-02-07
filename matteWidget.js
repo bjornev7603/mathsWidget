@@ -33,7 +33,7 @@ export default class MatteWidget {
     customNav.init();
     document.getElementById(this.divElementId).classList.add("matte-widget");
 
-    this.svgelement = SVG(this.divElementId).size("100%", "100%");
+    this.svgelement = SVG(this.divElementId).size("70%", "70%");
     this.svgelement.viewbox(0, 0, this.config.viewBox.x, this.config.viewBox.y);
     this.width_svg = "100%";
     this.height_svg = "100%";
@@ -75,34 +75,72 @@ export default class MatteWidget {
   }
 
   replay_svg(arg) {
-    let logg = "",
-      xx = "",
-      yy = "";
+    let logg = "";
+    let svg_obj;
+    let xx = "";
+    let yy = "";
     logg = this.answer[arg];
 
     switch (logg.event) {
       case "move":
-        
         //let mem = svg.members;
 
         if (typeof logg.x === "object") {
-          let svg_obj = SVG().select("#" + logg.obj);
-          for (let i = 0; i < logg.x.length; i++) {
+          //console.log(svg_obj.node.id + " ; value: " + logg.x[i] + 100);
+          //var handle = setInterval(function() {
+          /* for (let i = 0; i <= logg.x.length; i++) {
+              svg_obj = SVG().select("#" + logg.obj).members[0];
+              //svg_obj
+              if (svg_obj.node.id == logg.obj) {
+                
+                
+                var handle = setTimeout(function(to) { 
+                  console.log("timer på t sekund starter");
+                  svg_obj.x(logg.x[i]);
+                  svg_obj.y(logg.y[i]);
+                  //clearInterval(handle);
+                 }, 3000, i)
+              }
+            } */
 
-            
+          svg_obj = SVG().select("#" + logg.obj).members[0];
+          let posis = logg.x; //[1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+          let posis_y = logg.y;
+          let interval = 100; //one second
+          logg.x.forEach((pos, index) => {
+            setTimeout(() => {
+              console.log(pos + " and" + logg.y[index]);
+              svg_obj.x(pos);
+              svg_obj.y(logg.y[index]);
+            }, index * interval);
+          });
 
-            //for(let svgobj of svg_objs) {
-              //if(svgobj == logg.obj) {
+          //handle = 0;
+          //}, 4000); //msek
+          //if (i == logg.x.length - 1) {
+          //clearInterval(it);
+          //}
 
-              //}
-            }
-            let xval = logg.x[i];
-            let yval = logg.y[i];
-          }
+          //svg_obj.x(logg.y[i]) + " and " + svg_obj.y(logg.y[i])
+          //);
+
+          //svg_obj.x(logg.x[i]);
+          //svg_obj.y(logg.y[i]);
+
+          //for(let svgobj of svg_objs) {
+          //if(svgobj == logg.obj) {
+
+          //}
+
+          //let xval = logg.x[i];
+          //let yval = logg.y[i];
+
+          //clearInterval(handle);
         }
-        xx = typeof logg.x === "object" ? logg.x[logg.x.length - 1] : logg.x;
-        yy = typeof logg.y === "object" ? logg.y[logg.y.length - 1] : logg.y;
+        //xx = typeof logg.x === "object" ? logg.x[logg.x.length - 1] : logg.x;
+        //yy = typeof logg.y === "object" ? logg.y[logg.y.length - 1] : logg.y;
         //this.api.evalCommand(logg.objectName + '= (' + xx + ', ' + yy + ')')
+
         break;
     }
   }
