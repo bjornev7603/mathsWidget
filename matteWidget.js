@@ -56,15 +56,35 @@ export default class MatteWidget {
     if (!this.playback) {
       //this.setAns();
     } else {
+      let skip = false;
       this.state = {
-        next: this.answer[0].event,
-
+        //Initial state
+        nextevent: this.answer[0].event,
         current: 0,
         forward: () => {
-          let action = this.state.next,
-            index = this.state.current;
-          this.state.current = (this.state.current + 1) % this.answer.length;
-          this.state.next = this.answer[this.state.current].event;
+          if (
+            this.state.current % 2 == 0 &&
+            (this.answer[this.state.current].event == "move" ||
+              this.answer[this.state.current].event == "hit")
+          ) {
+            skip = true;
+            //this.state.current++; //step over index if move and odd number -> duplicate move
+            //this.state.nextevent = this.answer[this.state.current].event;
+          } else skip = false;
+          //next action and index (augmented below)
+          let action = this.state.nextevent;
+          let index = this.state.current;
+
+          if (skip) this.state.current++;
+
+          this.state.current =
+            this.state.current != this.answer.length
+              ? (this.state.current + 1) % this.answer.length
+              : 0;
+          console.log(this.state.current);
+          //this.state.current = index % 2 == 0 ? this.state.current : this.state.current +1;
+          //index % 2 == 0 ? (this.state.current + 1) % this.answer.length : 0;
+          this.state.nextevent = this.answer[this.state.current].event;
 
           return { action: action, index: index };
         }
@@ -83,8 +103,6 @@ export default class MatteWidget {
 
     switch (logg.event) {
       case "move":
-        //let mem = svg.members;
-
         if (typeof logg.x === "object") {
           //console.log(svg_obj.node.id + " ; value: " + logg.x[i] + 100);
           //var handle = setInterval(function() {
@@ -104,15 +122,25 @@ export default class MatteWidget {
             } */
 
           svg_obj = SVG().select("#" + logg.obj).members[0];
-          let posis = logg.x; //[1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-          let posis_y = logg.y;
-          let interval = 100; //one second
+
           logg.x.forEach((pos, index) => {
-            setTimeout(() => {
-              console.log(pos + " and" + logg.y[index]);
-              svg_obj.x(pos);
-              svg_obj.y(logg.y[index]);
-            }, index * interval);
+            let interval = 50; //msec
+            setTimeout(
+              () => {
+                interval =
+                  index < logg.x.length
+                    ? logg.time[index] - logg.time[index + 1]
+                    : 0;
+                /* console.log(
+                  pos + " and" + logg.y[index] + "timediff:" + interval
+                ); */
+                svg_obj.x(pos);
+                svg_obj.y(logg.y[index]);
+              },
+              index < logg.x.length && index == 1000 //comment last cond to apply logtime
+                ? (logg.time[index + 1] - logg.time[index]) * index * 10
+                : interval * index
+            );
           });
 
           //handle = 0;
