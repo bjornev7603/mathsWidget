@@ -30,6 +30,8 @@ export default class MatteWidget {
     this.audioEl = new Audio();
     this.timerInvoked = false; //brukes for å anslå om allerede trykket på timer-objekt
 
+    this.size_src_obj = 0;
+
     customNav.init();
     document.getElementById(this.divElementId).classList.add("matte-widget");
 
@@ -62,15 +64,14 @@ export default class MatteWidget {
         nextevent: this.answer[0].event,
         current: 0,
         forward: () => {
-          if (
+          let skip = false;
+          skip =
             this.state.current % 2 == 0 &&
             (this.answer[this.state.current].event == "move" ||
               this.answer[this.state.current].event == "hit")
-          ) {
-            skip = true;
-            //this.state.current++; //step over index if move and odd number -> duplicate move
-            //this.state.nextevent = this.answer[this.state.current].event;
-          } else skip = false;
+              ? (skip = true) //signal to step over index if move and odd number -> duplicate move
+              : (skip = false);
+
           //next action and index (augmented below)
           let action = this.state.nextevent;
           let index = this.state.current;
@@ -81,17 +82,44 @@ export default class MatteWidget {
             this.state.current != this.answer.length
               ? (this.state.current + 1) % this.answer.length
               : 0;
-          console.log(this.state.current);
-          //this.state.current = index % 2 == 0 ? this.state.current : this.state.current +1;
-          //index % 2 == 0 ? (this.state.current + 1) % this.answer.length : 0;
           this.state.nextevent = this.answer[this.state.current].event;
 
-          return { action: action, index: index };
+          return { action: action, index: index, skip: skip };
         }
       };
     }
 
     this.runscript();
+  }
+
+  reset_svg(ind, lg) {
+    let lg_obj;
+    let all_src = SVG().select(".source").members;
+    for (let src_el of all_src) {
+      for (let lg_el = 0; lg_el < lg.length; lg_el++) {
+        if (lg[lg_el].event == "move" && lg[lg_el].obj == src_el.node.id) {
+          lg_obj = SVG().select("#" + lg[lg_el].obj).members[0];
+
+          let aa_size = src_el.node.transform.animVal[0].matrix["a"];
+          if (aa_size == 0) aa_size = this.size_src_obj;
+          let dd_size = src_el.node.transform.animVal[0].matrix["d"];
+          if (dd_size == 0) dd_size = this.size_src_obj;
+
+          lg_obj.node.setAttribute(
+            "transform",
+            "matrix(" +
+              aa_size +
+              ",0,0," +
+              dd_size +
+              "," +
+              lg[lg_el].x[0] +
+              "," +
+              lg[lg_el].y[0] +
+              ")"
+          );
+        }
+      }
+    }
   }
 
   replay_svg(arg) {
@@ -101,26 +129,11 @@ export default class MatteWidget {
     let yy = "";
     logg = this.answer[arg];
 
+    if (arg == 0) this.reset_svg(arg, this.answer);
+
     switch (logg.event) {
       case "move":
         if (typeof logg.x === "object") {
-          //console.log(svg_obj.node.id + " ; value: " + logg.x[i] + 100);
-          //var handle = setInterval(function() {
-          /* for (let i = 0; i <= logg.x.length; i++) {
-              svg_obj = SVG().select("#" + logg.obj).members[0];
-              //svg_obj
-              if (svg_obj.node.id == logg.obj) {
-                
-                
-                var handle = setTimeout(function(to) { 
-                  console.log("timer på t sekund starter");
-                  svg_obj.x(logg.x[i]);
-                  svg_obj.y(logg.y[i]);
-                  //clearInterval(handle);
-                 }, 3000, i)
-              }
-            } */
-
           svg_obj = SVG().select("#" + logg.obj).members[0];
 
           logg.x.forEach((pos, index) => {
@@ -131,9 +144,6 @@ export default class MatteWidget {
                   index < logg.x.length
                     ? logg.time[index] - logg.time[index + 1]
                     : 0;
-                /* console.log(
-                  pos + " and" + logg.y[index] + "timediff:" + interval
-                ); */
                 svg_obj.x(pos);
                 svg_obj.y(logg.y[index]);
               },
@@ -142,34 +152,18 @@ export default class MatteWidget {
                 : interval * index
             );
           });
-
-          //handle = 0;
-          //}, 4000); //msek
-          //if (i == logg.x.length - 1) {
-          //clearInterval(it);
-          //}
-
-          //svg_obj.x(logg.y[i]) + " and " + svg_obj.y(logg.y[i])
-          //);
-
-          //svg_obj.x(logg.x[i]);
-          //svg_obj.y(logg.y[i]);
-
-          //for(let svgobj of svg_objs) {
-          //if(svgobj == logg.obj) {
-
-          //}
-
-          //let xval = logg.x[i];
-          //let yval = logg.y[i];
-
-          //clearInterval(handle);
         }
-        //xx = typeof logg.x === "object" ? logg.x[logg.x.length - 1] : logg.x;
-        //yy = typeof logg.y === "object" ? logg.y[logg.y.length - 1] : logg.y;
-        //this.api.evalCommand(logg.objectName + '= (' + xx + ', ' + yy + ')')
-
         break;
+
+      case "hit":
+        var t = logg.x * 0.97 + " " + logg.y * 0.95;
+
+        let svg_ele = SVG().select("#" + logg.obj).members[0];
+        TweenLite.to(svg_ele, 0.1, {
+          opacity: 0,
+          scale: 0,
+          svgOrigin: t
+        });
     }
   }
 
@@ -199,8 +193,12 @@ export default class MatteWidget {
         name: "",
         handler: () => {
           let toggle = false;
-          let { action, index } = this.state.forward();
-          if (index == this.answer.length - 1) toggle = true;
+          let { action, index, skip } = this.state.forward();
+          if (
+            index == this.answer.length - 1 ||
+            (index == this.answer.length - 2 && skip)
+          )
+            toggle = true;
           //if (index == 0) this.eventHandlers.CLEAR_ANIMATIONS();
           this.eventHandlers[action](index);
           return toggle;
@@ -267,6 +265,10 @@ export default class MatteWidget {
       var svgimage = this.svgelement.svg(sXML); // put loaded file on SVG document
       //window.test = svgimage;
       this.targets = SVG.select(".target");
+
+      this.size_src_obj = SVG().select(
+        ".source"
+      ).members[0].node.transform.animVal[0].matrix["a"];
 
       //gå gjennom alle objekt som har klasser knyttet til seg. Finne initiell x og y posisjon (state)
 
