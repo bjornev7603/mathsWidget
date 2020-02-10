@@ -30,7 +30,7 @@ export default class MatteWidget {
     this.audioEl = new Audio();
     this.timerInvoked = false; //brukes for å anslå om allerede trykket på timer-objekt
 
-    this.size_src_obj = 0;
+    this.size_src_obj = 0; //reset size of object when replaying
 
     customNav.init();
     document.getElementById(this.divElementId).classList.add("matte-widget");
@@ -66,9 +66,9 @@ export default class MatteWidget {
         forward: () => {
           let skip = false;
           skip =
-            this.state.current % 2 == 0 &&
-            (this.answer[this.state.current].event == "move" ||
-              this.answer[this.state.current].event == "hit")
+            this.answer[this.state.current].event == "move" &&
+            this.answer[this.state.current].time[0] ==
+              this.answer[this.state.current + 1].time[0]
               ? (skip = true) //signal to step over index if move and odd number -> duplicate move
               : (skip = false);
 
@@ -92,31 +92,41 @@ export default class MatteWidget {
     this.runscript();
   }
 
+  //reset all source elements to original state
   reset_svg(ind, lg) {
     let lg_obj;
+    let lg_moved_obj = [];
     let all_src = SVG().select(".source").members;
     for (let src_el of all_src) {
       for (let lg_el = 0; lg_el < lg.length; lg_el++) {
         if (lg[lg_el].event == "move" && lg[lg_el].obj == src_el.node.id) {
-          lg_obj = SVG().select("#" + lg[lg_el].obj).members[0];
+          if (
+            lg_el + 1 < lg.length &&
+            lg[lg_el].time[0] != lg[lg_el + 1].time[0] &&
+            lg_moved_obj.includes(lg[lg_el].obj) == false
+          ) {
+            lg_moved_obj.push(lg[lg_el].obj);
+            lg_obj = SVG().select("#" + lg[lg_el].obj).members[0];
 
-          let aa_size = src_el.node.transform.animVal[0].matrix["a"];
-          if (aa_size == 0) aa_size = this.size_src_obj;
-          let dd_size = src_el.node.transform.animVal[0].matrix["d"];
-          if (dd_size == 0) dd_size = this.size_src_obj;
+            let aa_size = src_el.node.transform.animVal[0].matrix["a"];
+            if (aa_size == 0) aa_size = this.size_src_obj;
+            let dd_size = src_el.node.transform.animVal[0].matrix["d"];
+            if (dd_size == 0) dd_size = this.size_src_obj;
 
-          lg_obj.node.setAttribute(
-            "transform",
-            "matrix(" +
-              aa_size +
-              ",0,0," +
-              dd_size +
-              "," +
-              lg[lg_el].x[0] +
-              "," +
-              lg[lg_el].y[0] +
-              ")"
-          );
+            lg_obj.node.setAttribute(
+              "transform",
+              "matrix(" +
+                aa_size +
+                ",0,0," +
+                dd_size +
+                "," +
+                lg[lg_el].x[0] +
+                "," +
+                lg[lg_el].y[0] +
+                ")"
+            );
+            lg_obj.node.style.opacity = 1;
+          }
         }
       }
     }
@@ -157,13 +167,16 @@ export default class MatteWidget {
 
       case "hit":
         var t = logg.x * 0.97 + " " + logg.y * 0.95;
-
         let svg_ele = SVG().select("#" + logg.obj).members[0];
-        TweenLite.to(svg_ele, 0.1, {
-          opacity: 0,
-          scale: 0,
-          svgOrigin: t
-        });
+        if (SVG().select(".target.eat").members.length > 0) {
+          TweenLite.to(svg_ele, 0.1, {
+            opacity: 0,
+            scale: 0,
+            svgOrigin: t
+          });
+        } else {
+          svg_ele.node.style.opacity = "0.5";
+        }
     }
   }
 
