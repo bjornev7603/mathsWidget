@@ -10,13 +10,13 @@
 .select {
   cursor: pointer;
 }
-.framed,
+.framed/* ,
 .framed > text,
 .framed > g > rect,
 .framed > rect,
 .framed > image,
 .framed > g > image,
-.framed > ellipse {
+.framed > ellipse */ {
   outline: 3px solid green;
 }
 

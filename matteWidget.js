@@ -9,7 +9,9 @@ export default class MatteWidget {
     //playback events
     this.eventHandlers = {
       move: arg => this.replay_svg(arg),
-      hit: arg => this.replay_svg(arg)
+      hit: arg => this.replay_svg(arg),
+      click: arg => this.replay_svg(arg)
+
       //RESET: () => this.api.reset()
     };
 
@@ -35,7 +37,7 @@ export default class MatteWidget {
     customNav.init();
     document.getElementById(this.divElementId).classList.add("matte-widget");
 
-    this.svgelement = SVG(this.divElementId).size("70%", "70%");
+    this.svgelement = SVG(this.divElementId).size("100%", "100%");
     this.svgelement.viewbox(0, 0, this.config.viewBox.x, this.config.viewBox.y);
     this.width_svg = "100%";
     this.height_svg = "100%";
@@ -94,6 +96,12 @@ export default class MatteWidget {
 
   //reset all source elements to original state
   reset_svg(ind, lg) {
+    var memb = document.getElementsByClassName("select");
+    for (var i = 0; i < memb.length; i++) {
+      memb[i].classList.toggle("framed", false);
+      memb[i].classList.toggle("unframed", false);
+    }
+
     let lg_obj = "{g}";
     let svg_arr;
     let lg_moved_obj = [];
@@ -197,6 +205,17 @@ export default class MatteWidget {
         } else {
           svg_ele.node.style.opacity = "0.5";
         }
+        break;
+      case "click":
+        var memb = document.getElementsByClassName("select");
+        for (var i = 0; i < memb.length; i++) {
+          memb[i].classList.toggle("framed", false);
+          memb[i].classList.toggle("unframed", false);
+        }
+        let svg_sel_el = SVG().select("#" + logg.obj).members[0].node;
+        svg_sel_el.classList.toggle("framed", true);
+
+        break;
     }
   }
 
