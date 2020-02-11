@@ -94,19 +94,39 @@ export default class MatteWidget {
 
   //reset all source elements to original state
   reset_svg(ind, lg) {
-    let lg_obj;
+    let lg_obj = "{g}";
+    let svg_arr;
     let lg_moved_obj = [];
+    let lg_times = [];
     let all_src = SVG().select(".source").members;
     for (let src_el of all_src) {
       for (let lg_el = 0; lg_el < lg.length; lg_el++) {
-        if (lg[lg_el].event == "move" && lg[lg_el].obj == src_el.node.id) {
+        let srcid = src_el.node.id;
+        if (src_el.node.id.includes("gr")) {
+          srcid = src_el.node.id.substring(2, src_el.node.id.length);
+        }
+        if (lg[lg_el].event == "move" && lg[lg_el].obj == srcid) {
           if (
-            lg_el + 1 < lg.length &&
-            lg[lg_el].time[0] != lg[lg_el + 1].time[0] &&
-            lg_moved_obj.includes(lg[lg_el].obj) == false
+            lg_moved_obj.includes("gr" + lg[lg_el].obj) == false &&
+            lg_times.includes(lg[lg_el].time[0]) == false
           ) {
-            lg_moved_obj.push(lg[lg_el].obj);
-            lg_obj = SVG().select("#" + lg[lg_el].obj).members[0];
+            lg_moved_obj.push("gr" + lg[lg_el].obj);
+            lg_times.push(lg[lg_el].time[0]);
+
+            svg_arr = SVG().select(".source").members;
+            for (let svg_el of svg_arr) {
+              let lgtmp = lg[lg_el].obj;
+              if (!lgtmp.includes("gr") && svg_el.node.id.includes("gr")) {
+                //problem of integer start of string
+                lgtmp = "gr" + lgtmp;
+              }
+              if (svg_el.node.id == lgtmp) {
+                lg_obj = svg_el;
+              }
+            }
+
+            lg_obj.node.setAttribute("id", "gr" + lg[lg_el].obj);
+            //lg_obj = SVG().select("#" + lg[lg_el].obj).members[0];
 
             let aa_size = src_el.node.transform.animVal[0].matrix["a"];
             if (aa_size == 0) aa_size = this.size_src_obj;
@@ -144,7 +164,7 @@ export default class MatteWidget {
     switch (logg.event) {
       case "move":
         if (typeof logg.x === "object") {
-          svg_obj = SVG().select("#" + logg.obj).members[0];
+          svg_obj = SVG().select("#gr" + logg.obj).members[0];
 
           logg.x.forEach((pos, index) => {
             let interval = 50; //msec
@@ -152,7 +172,7 @@ export default class MatteWidget {
               () => {
                 interval =
                   index < logg.x.length
-                    ? logg.time[index] - logg.time[index + 1]
+                    ? logg.time[index + 1] - logg.time[index]
                     : 0;
                 svg_obj.x(pos);
                 svg_obj.y(logg.y[index]);
@@ -167,7 +187,7 @@ export default class MatteWidget {
 
       case "hit":
         var t = logg.x * 0.97 + " " + logg.y * 0.95;
-        let svg_ele = SVG().select("#" + logg.obj).members[0];
+        let svg_ele = SVG().select("#gr" + logg.obj).members[0];
         if (SVG().select(".target.eat").members.length > 0) {
           TweenLite.to(svg_ele, 0.1, {
             opacity: 0,
