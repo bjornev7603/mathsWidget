@@ -67,12 +67,17 @@ export default class MatteWidget {
         current: 0,
         forward: () => {
           let skip = false;
-          skip =
-            this.answer[this.state.current].event == "move" &&
-            this.answer[this.state.current].time[0] ==
-              this.answer[this.state.current + 1].time[0]
-              ? (skip = true) //signal to step over index if move and odd number -> duplicate move
-              : (skip = false);
+
+          if (this.state.current + 1 < this.answer.length) {
+            let t1 = this.answer[this.state.current];
+            t1 = typeof t1.time === "object" ? t1.time[0] : t1.time;
+            let t2 = this.answer[this.state.current + 1];
+            t2 = typeof t2.time === "object" ? t2.time[0] : t2.time;
+            if (t1 == t2) {
+              //signal to step over index if move and odd number -> duplicate move
+              skip = true;
+            }
+          }
 
           //next action and index (augmented below)
           let action = this.state.nextevent;
@@ -102,7 +107,7 @@ export default class MatteWidget {
       memb[i].classList.toggle("unframed", false);
     }
 
-    let lg_obj = "{g}";
+    let svg_obj = "{g}";
     let svg_arr;
     let lg_moved_obj = [];
     let lg_times = [];
@@ -129,11 +134,11 @@ export default class MatteWidget {
                 lgtmp = "gr" + lgtmp;
               }
               if (svg_el.node.id == lgtmp) {
-                lg_obj = svg_el;
+                svg_obj = svg_el;
               }
             }
 
-            lg_obj.node.setAttribute("id", "gr" + lg[lg_el].obj);
+            svg_obj.node.setAttribute("id", "gr" + lg[lg_el].obj);
             //lg_obj = SVG().select("#" + lg[lg_el].obj).members[0];
 
             let aa_size = src_el.node.transform.animVal[0].matrix["a"];
@@ -141,7 +146,7 @@ export default class MatteWidget {
             let dd_size = src_el.node.transform.animVal[0].matrix["d"];
             if (dd_size == 0) dd_size = this.size_src_obj;
 
-            lg_obj.node.setAttribute(
+            svg_obj.node.setAttribute(
               "transform",
               "matrix(" +
                 aa_size +
@@ -153,7 +158,7 @@ export default class MatteWidget {
                 lg[lg_el].y[0] +
                 ")"
             );
-            lg_obj.node.style.opacity = 1;
+            svg_obj.node.style.opacity = 1;
           }
         }
       }
@@ -318,9 +323,12 @@ export default class MatteWidget {
       //window.test = svgimage;
       this.targets = SVG.select(".target");
 
-      this.size_src_obj = SVG().select(
-        ".source"
-      ).members[0].node.transform.animVal[0].matrix["a"];
+      this.size_src_obj =
+        SVG().select(".source").members.length > 0
+          ? SVG().select(".source").members[0].node.transform.animVal[0].matrix[
+              "a"
+            ]
+          : 0;
 
       //gå gjennom alle objekt som har klasser knyttet til seg. Finne initiell x og y posisjon (state)
 
