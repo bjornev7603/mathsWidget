@@ -33,6 +33,15 @@ export default class MatteWidget {
     this.timerInvoked = false; //brukes for å anslå om allerede trykket på timer-objekt
 
     this.size_src_obj = 0; //reset size of object when replaying
+    this.already_replay = false; //checks if new replay
+    this.x_offset = [];
+    this.y_offset = [];
+    this.x_offset_diff = [];
+    this.y_offset_diff = [];
+    this.init_mx_a = [];
+    this.init_mx_b = [];
+    this.init_mx_c = [];
+    this.init_mx_d = [];
 
     customNav.init();
     document.getElementById(this.divElementId).classList.add("matte-widget");
@@ -107,78 +116,163 @@ export default class MatteWidget {
       memb[i].classList.toggle("unframed", false);
     }
 
-    let svg_obj = "{g}";
-    let svg_arr;
+    let src_el = "{g}";
+
     let lg_moved_obj = [];
     let lg_times = [];
     let all_src = SVG().select(".source").members;
+    //Loop all source objects
     for (let src_el of all_src) {
+      //Loop all log elements
       for (let lg_el = 0; lg_el < lg.length; lg_el++) {
-        let srcid = src_el.node.id;
-        if (src_el.node.id.includes("gr")) {
-          srcid = src_el.node.id.substring(2, src_el.node.id.length);
-        }
-        if (lg[lg_el].event == "move" && lg[lg_el].obj == srcid) {
-          if (
-            lg_moved_obj.includes("gr" + lg[lg_el].obj) == false &&
-            lg_times.includes(lg[lg_el].time[0]) == false
-          ) {
-            lg_moved_obj.push("gr" + lg[lg_el].obj);
-            lg_times.push(lg[lg_el].time[0]);
+        //find start pos of all source objects
+        //if (this.is_numeric(lg[lg_el].obj[0])) {
+        //src_el.node.setAttribute("id", "gr" + lg[lg_el].obj);
+        //}
 
-            svg_arr = SVG().select(".source").members;
-            for (let svg_el of svg_arr) {
-              let lgtmp = lg[lg_el].obj;
-              if (!lgtmp.includes("gr") && svg_el.node.id.includes("gr")) {
-                //problem of integer start of string
-                lgtmp = "gr" + lgtmp;
-              }
-              if (svg_el.node.id == lgtmp) {
-                svg_obj = svg_el;
-              }
+        for (let src_el of all_src) {
+          if (this.is_numeric(src_el.node.id[0])) {
+            src_el.node.setAttribute("id", "gr" + src_el.node.id);
+          }
+        }
+        let lgtmp = lg[lg_el].obj;
+        //problem of integer start of string
+        lgtmp = this.is_numeric(lgtmp[0]) ? (lgtmp = "gr" + lgtmp) : lgtmp;
+
+        let svg_obj = SVG().select("#" + lgtmp).members[0];
+
+        //***************************************************** */
+        //only take source objects that correspond to id log row
+        //***************************************************** */
+        if (src_el.node.id == lgtmp) {
+          if (
+            !this.already_replay &&
+            svg_obj.node.transform.animVal.length > 0
+          ) {
+            //some svgs have deviating posisions in transform matrix, or different group objects have the same x /y pos in matrix despite sub els have diff x / y
+            //define px difference between transform matrix x/y and log x/y to get real paths
+
+            //diff x
+            if (lg[lg_el].obj in this.x_offset_diff == false) {
+              this.x_offset[lg[lg_el].obj] =
+                svg_obj.node.transform.animVal[0].matrix["e"];
+              this.x_offset_diff[lg[lg_el].obj] =
+                this.x_offset[lg[lg_el].obj] - lg[lg_el].x[0];
             }
 
-            svg_obj.node.setAttribute("id", "gr" + lg[lg_el].obj);
-            //lg_obj = SVG().select("#" + lg[lg_el].obj).members[0];
-
-            let aa_size = src_el.node.transform.animVal[0].matrix["a"];
-            if (aa_size == 0) aa_size = this.size_src_obj;
-            let dd_size = src_el.node.transform.animVal[0].matrix["d"];
-            if (dd_size == 0) dd_size = this.size_src_obj;
-
-            svg_obj.node.setAttribute(
-              "transform",
-              "matrix(" +
-                aa_size +
-                ",0,0," +
-                dd_size +
-                "," +
-                lg[lg_el].x[0] +
-                "," +
-                lg[lg_el].y[0] +
-                ")"
-            );
-            svg_obj.node.style.opacity = 1;
+            //diff y
+            if (lg[lg_el].obj in this.y_offset_diff == false) {
+              this.y_offset[lg[lg_el].obj] =
+                svg_obj.node.transform.animVal[0].matrix["f"];
+              this.y_offset_diff[lg[lg_el].obj] =
+                this.y_offset[lg[lg_el].obj] - lg[lg_el].y[0];
+            }
           }
+
+          //save initial x/y value the first time
+          /*  if (
+            !this.already_replay &&
+            src_el.node._gsTransform.x != null &&
+            src_el.node._gsTransform.y != null
+          ) {
+            if (!this.x_init_vals.includes(lg[lg_el].obj)) {
+              this.x_init_vals[lg[lg_el].obj] = src_el.node._gsTransform.x;
+            }
+            if (!this.y_init_vals.includes(lg[lg_el].obj)) {
+              this.y_init_vals[lg[lg_el].obj] = src_el.node._gsTransform.y;
+            }
+          } */
+
+          let srcid = src_el.node.id;
+          if (src_el.node.id.includes("gr")) {
+            srcid = src_el.node.id.substring(2, src_el.node.id.length);
+          }
+          if (lg[lg_el].event == "move" && lg[lg_el].obj == srcid) {
+            if (
+              lg_moved_obj.includes("gr" + lg[lg_el].obj) == false &&
+              lg_times.includes(lg[lg_el].time[0]) == false
+            ) {
+              lg_moved_obj.push("gr" + lg[lg_el].obj);
+              lg_times.push(lg[lg_el].time[0]);
+
+              if (this.is_numeric(lg[lg_el].obj[0])) {
+                src_el.node.setAttribute("id", "gr" + lg[lg_el].obj);
+              }
+
+              /* let aa_size = src_el.node.transform.animVal[0].matrix["a"];
+              if (aa_size == 0) aa_size = this.size_src_obj;
+              let dd_size = src_el.node.transform.animVal[0].matrix["d"];
+              if (dd_size == 0) dd_size = this.size_src_obj; */
+              if (lg[lg_el].obj in this.init_mx_a == false) {
+                this.init_mx_a[lg[lg_el].obj] =
+                  src_el.node.transform.animVal[0].matrix["a"];
+                this.init_mx_b[lg[lg_el].obj] =
+                  src_el.node.transform.animVal[0].matrix["b"];
+                this.init_mx_c[lg[lg_el].obj] =
+                  src_el.node.transform.animVal[0].matrix["c"];
+                this.init_mx_d[lg[lg_el].obj] =
+                  src_el.node.transform.animVal[0].matrix["d"];
+              }
+
+              //src_el.x(src_el.node._gsTransform.x + 36);
+              //src_el.y(src_el.node._gsTransform.y + 216);
+              src_el.node.setAttribute(
+                "transform",
+                "matrix(" +
+                  //aa_size +
+                  this.init_mx_a[lg[lg_el].obj] +
+                  "," +
+                  this.init_mx_b[lg[lg_el].obj] +
+                  "," +
+                  this.init_mx_c[lg[lg_el].obj] +
+                  "," +
+                  //dd_size +
+                  this.init_mx_d[lg[lg_el].obj] +
+                  "," +
+                  (src_el.node._gsTransform.x +
+                    this.x_offset_diff[lg[lg_el].obj]) +
+                  "," +
+                  (src_el.node._gsTransform.y +
+                    this.y_offset_diff[lg[lg_el].obj]) +
+                  ")"
+              );
+
+              src_el.node.style.opacity = 1;
+            }
+          }
+
+          //get back initial value
+          /* if (this.already_replay) {
+          if (this.x_init_vals.includes([lg[lg_el].obj])) {
+            src_el.node._gsTransform.x = this.x_init_vals.contains([
+              lg[lg_el].obj
+            ]);
+          }
+          if (this.y_init_vals.includes([lg[lg_el].obj])) {
+            src_el.node._gsTransform.y = this.y_init_vals.contains([
+              lg[lg_el].obj
+            ]);
+          }
+        } */
         }
       }
     }
+    this.already_replay = true;
+  }
+  is_numeric(str) {
+    return /^\d+$/.test(str);
   }
 
   replay_svg(arg) {
-    let logg = "";
-    let svg_obj;
-    let xx = "";
-    let yy = "";
-    logg = this.answer[arg];
-
     if (arg == 0) this.reset_svg(arg, this.answer);
+
+    let logg = this.answer[arg];
+    let prefix = this.is_numeric(logg.obj[0]) ? "#gr" : "#";
+    let svg_obj = SVG().select(prefix + logg.obj).members[0];
 
     switch (logg.event) {
       case "move":
         if (typeof logg.x === "object") {
-          svg_obj = SVG().select("#gr" + logg.obj).members[0];
-
           logg.x.forEach((pos, index) => {
             let interval = 50; //msec
             setTimeout(
@@ -187,8 +281,35 @@ export default class MatteWidget {
                   index < logg.x.length
                     ? logg.time[index + 1] - logg.time[index]
                     : 0;
-                svg_obj.x(pos);
-                svg_obj.y(logg.y[index]);
+                let pos_x =
+                  index > 0
+                    ? logg.x[index] + this.x_offset_diff[logg.obj]
+                    : this.x_offset[logg.obj];
+
+                let pos_y =
+                  index > 0
+                    ? +(logg.y[index] + this.y_offset_diff[logg.obj])
+                    : this.y_offset[logg.obj];
+
+                //svg_obj.node._gsTransform.x = logg.x[index];
+                //svg_obj.node._gsTransform.y = logg.y[index];
+
+                svg_obj.node.setAttribute(
+                  "transform",
+                  "matrix(" +
+                    svg_obj.node.transform.animVal[0].matrix["a"] +
+                    "," +
+                    svg_obj.node.transform.animVal[0].matrix["b"] +
+                    "," +
+                    svg_obj.node.transform.animVal[0].matrix["c"] +
+                    "," +
+                    svg_obj.node.transform.animVal[0].matrix["d"] +
+                    "," +
+                    pos_x +
+                    "," +
+                    pos_y +
+                    ")"
+                );
               },
               index < logg.x.length && index == 1000 //comment last cond to apply logtime
                 ? (logg.time[index + 1] - logg.time[index]) * index * 10
@@ -200,7 +321,10 @@ export default class MatteWidget {
 
       case "hit":
         var t = logg.x * 0.97 + " " + logg.y * 0.95;
-        let svg_ele = SVG().select("#gr" + logg.obj).members[0];
+        let prefix = "";
+        prefix = this.is_numeric(logg.obj[0]) ? "#gr" : "#";
+
+        let svg_ele = SVG().select(prefix + logg.obj).members[0];
         if (SVG().select(".target.eat").members.length > 0) {
           TweenLite.to(svg_ele, 0.1, {
             opacity: 0,
@@ -524,6 +648,7 @@ export default class MatteWidget {
             event.x.push(this.x);
             event.y.push(this.y);
             event.time.push(Date.now());
+            console.log(this);
           }
         },
 
