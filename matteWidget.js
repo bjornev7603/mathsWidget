@@ -125,11 +125,6 @@ export default class MatteWidget {
     for (let src_el of all_src) {
       //Loop all log elements
       for (let lg_el = 0; lg_el < lg.length; lg_el++) {
-        //find start pos of all source objects
-        //if (this.is_numeric(lg[lg_el].obj[0])) {
-        //src_el.node.setAttribute("id", "gr" + lg[lg_el].obj);
-        //}
-
         for (let src_el of all_src) {
           if (this.is_numeric(src_el.node.id[0])) {
             src_el.node.setAttribute("id", "gr" + src_el.node.id);
@@ -169,20 +164,6 @@ export default class MatteWidget {
             }
           }
 
-          //save initial x/y value the first time
-          /*  if (
-            !this.already_replay &&
-            src_el.node._gsTransform.x != null &&
-            src_el.node._gsTransform.y != null
-          ) {
-            if (!this.x_init_vals.includes(lg[lg_el].obj)) {
-              this.x_init_vals[lg[lg_el].obj] = src_el.node._gsTransform.x;
-            }
-            if (!this.y_init_vals.includes(lg[lg_el].obj)) {
-              this.y_init_vals[lg[lg_el].obj] = src_el.node._gsTransform.y;
-            }
-          } */
-
           let srcid = src_el.node.id;
           if (src_el.node.id.includes("gr")) {
             srcid = src_el.node.id.substring(2, src_el.node.id.length);
@@ -199,10 +180,6 @@ export default class MatteWidget {
                 src_el.node.setAttribute("id", "gr" + lg[lg_el].obj);
               }
 
-              /* let aa_size = src_el.node.transform.animVal[0].matrix["a"];
-              if (aa_size == 0) aa_size = this.size_src_obj;
-              let dd_size = src_el.node.transform.animVal[0].matrix["d"];
-              if (dd_size == 0) dd_size = this.size_src_obj; */
               if (lg[lg_el].obj in this.init_mx_a == false) {
                 this.init_mx_a[lg[lg_el].obj] =
                   src_el.node.transform.animVal[0].matrix["a"];
@@ -214,19 +191,15 @@ export default class MatteWidget {
                   src_el.node.transform.animVal[0].matrix["d"];
               }
 
-              //src_el.x(src_el.node._gsTransform.x + 36);
-              //src_el.y(src_el.node._gsTransform.y + 216);
               src_el.node.setAttribute(
                 "transform",
                 "matrix(" +
-                  //aa_size +
                   this.init_mx_a[lg[lg_el].obj] +
                   "," +
                   this.init_mx_b[lg[lg_el].obj] +
                   "," +
                   this.init_mx_c[lg[lg_el].obj] +
                   "," +
-                  //dd_size +
                   this.init_mx_d[lg[lg_el].obj] +
                   "," +
                   (src_el.node._gsTransform.x +
@@ -240,20 +213,6 @@ export default class MatteWidget {
               src_el.node.style.opacity = 1;
             }
           }
-
-          //get back initial value
-          /* if (this.already_replay) {
-          if (this.x_init_vals.includes([lg[lg_el].obj])) {
-            src_el.node._gsTransform.x = this.x_init_vals.contains([
-              lg[lg_el].obj
-            ]);
-          }
-          if (this.y_init_vals.includes([lg[lg_el].obj])) {
-            src_el.node._gsTransform.y = this.y_init_vals.contains([
-              lg[lg_el].obj
-            ]);
-          }
-        } */
         }
       }
     }
@@ -290,9 +249,6 @@ export default class MatteWidget {
                   index > 0
                     ? +(logg.y[index] + this.y_offset_diff[logg.obj])
                     : this.y_offset[logg.obj];
-
-                //svg_obj.node._gsTransform.x = logg.x[index];
-                //svg_obj.node._gsTransform.y = logg.y[index];
 
                 svg_obj.node.setAttribute(
                   "transform",
@@ -418,6 +374,7 @@ export default class MatteWidget {
       console.log("DEBUG: got answer:", this.answer);
     }
 
+    // ABSTRACT OF CALLS
     // runscript(
     //   parseSVG = svgResp =>
     //     audioEl.play()
