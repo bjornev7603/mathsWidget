@@ -3,7 +3,14 @@
 
 export default class MatteWidget {
   // class MatteWidget {
-  constructor(divElementId, config, answer = null, onAnswer, options) {
+  constructor(
+    divElementId,
+    config,
+    answer = null,
+    onAnswer,
+    svg = null,
+    options
+  ) {
     this.divElementId = divElementId;
 
     //playback events
@@ -31,6 +38,10 @@ export default class MatteWidget {
     this.onAnswer = onAnswer;
     this.audioEl = new Audio();
     this.timerInvoked = false; //brukes for å anslå om allerede trykket på timer-objekt
+
+    //let ff = document.getElementById("saved_svgobj")
+    //ff.value =
+    this.svg = svg;
 
     this.size_src_obj = 0; //reset size of object when replaying
     this.already_replay = false; //checks if new replay
@@ -108,7 +119,9 @@ export default class MatteWidget {
     this.runscript();
   }
 
+  //********************************************** */
   //reset all source elements to original state
+  //********************************************** */
   reset_svg(ind, lg) {
     //reset select element
     var memb = document.getElementsByClassName("select");
@@ -122,6 +135,8 @@ export default class MatteWidget {
     let lg_times = [];
     //select nodes from svg file
     let all_src = SVG().select(".source").members;
+
+    //Reset moving object (source)
 
     //Loop all source objects
     for (let src_el of all_src) {
@@ -227,6 +242,7 @@ export default class MatteWidget {
     if (arg == 0) this.reset_svg(arg, this.answer);
 
     let logg = this.answer[arg];
+    //Select specific svg node element that corresponds to log row
     logg.obj = this.is_numeric(logg.obj[0]) ? "gr" + logg.obj : logg.obj;
     let svg_obj = SVG().select("#" + logg.obj).members[0];
 
@@ -251,16 +267,17 @@ export default class MatteWidget {
                     ? +(logg.y[index] + this.y_offset_diff[logg.obj])
                     : this.y_offset[logg.obj];
 
+                let nd_mx = svg_obj.node.transform.animVal[0].matrix;
                 svg_obj.node.setAttribute(
                   "transform",
                   "matrix(" +
-                    svg_obj.node.transform.animVal[0].matrix["a"] +
+                    nd_mx["a"] +
                     "," +
-                    svg_obj.node.transform.animVal[0].matrix["b"] +
+                    nd_mx["b"] +
                     "," +
-                    svg_obj.node.transform.animVal[0].matrix["c"] +
+                    nd_mx["c"] +
                     "," +
-                    svg_obj.node.transform.animVal[0].matrix["d"] +
+                    nd_mx["d"] +
                     "," +
                     pos_x +
                     "," +
@@ -277,7 +294,7 @@ export default class MatteWidget {
         break;
 
       case "hit":
-        var t = logg.x * 0.97 + " " + logg.y * 0.95;
+        var t = logg.x * 0.94 + " " + logg.y * 0.91;
         let prefix = "";
         prefix = this.is_numeric(logg.obj[0]) ? "#gr" : "#";
 
@@ -289,7 +306,7 @@ export default class MatteWidget {
             svgOrigin: t
           });
         } else {
-          svg_ele.node.style.opacity = "0.5";
+          svg_ele.node.style.opacity = "0.66";
         }
         break;
       case "click":
@@ -666,14 +683,18 @@ export default class MatteWidget {
       });
     };
 
-    fetch(this.config.svgUrl, {
-      method: "GET",
-      mode: "no-cors"
-    })
-      .then(resp => resp.text())
-      .then(svg => {
-        parseSVG(svg);
-      });
+    if (this.svg == null) {
+      fetch(this.svg == null ? this.config.svgUrl : this.svg, {
+        method: "GET",
+        mode: "no-cors"
+      })
+        .then(resp => resp.text())
+        .then(svgl => {
+          parseSVG(svgl);
+        });
+    } else {
+      parseSVG(this.svg);
+    }
   }
 
   //Oppdaterer med hendelse

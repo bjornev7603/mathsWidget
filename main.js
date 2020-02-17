@@ -14,6 +14,7 @@ const fileUpload = document.getElementById("config-file");
 const setAns = document.getElementById("set-ans");
 const playback = document.getElementById("playback");
 const fileJsonUpload = document.getElementById("json-log-file");
+const SVGUpload = document.getElementById("svgfile");
 
 fileUpload.onchange = inn => {
   let file = fileUpload.files[0];
@@ -30,12 +31,12 @@ let ans = {};
 
 setAns.onclick = () => {
   console.log("SETTING ANSWER");
-  if (ans.log.length > 0) makeWidget(currentConfig, ans.log);
+  if (ans.log.length > 0) makeWidget(currentConfig, null, ans.log);
 };
 
 playback.onclick = () => {
   console.log("PLAYBACK");
-  if (ans.log.length > 0) makeWidget(currentConfig, ans.log, true);
+  if (ans.log.length > 0) makeWidget(currentConfig, ans.log, null, true);
 };
 
 //let answerEl = document.getElementById("answer");
@@ -48,7 +49,20 @@ fileJsonUpload.onchange = inn => {
     let jsonobj = JSON.parse(evt.target.result);
     logdata_json = jsonobj;
     console.log(logdata_json);
-    makeWidget(currentConfig, logdata_json.log, true);
+    makeWidget(currentConfig, logdata_json.log, null, true);
+  };
+  fr.readAsText(file);
+};
+
+SVGUpload.onchange = inn => {
+  console.log("Getting uploaded svg file");
+  let file = SVGUpload.files[0];
+  let fr = new FileReader();
+  fr.onload = evt => {
+    //let svgobj = JSON.parse(evt.target.result);
+    let svg = evt.target.result;
+    console.log("loading svg file");
+    makeWidget(currentConfig, null, svg);
   };
   fr.readAsText(file);
 };
@@ -71,7 +85,7 @@ fetch(`./configs/${configFile}`)
     makeWidget(config);
   });
 
-function makeWidget(config, answer = null, playback = false) {
+function makeWidget(config, answer = null, svg = null, playback = false) {
   // let divEl = document.getElementById('widget')
   if (divContainer.hasChildNodes())
     divContainer.removeChild(divContainer.firstChild);
@@ -84,7 +98,7 @@ function makeWidget(config, answer = null, playback = false) {
       .toString(36)
       .substring(2, 15);
   divContainer.append(divEl);
-  window.widget = new Widget(divEl.id, config, answer, onAnswer, {
+  window.widget = new Widget(divEl.id, config, answer, onAnswer, svg, {
     playback: playback
   });
 }
