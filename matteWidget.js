@@ -40,10 +40,10 @@ export default class MatteWidget {
     this.timerInvoked = false; //brukes for å anslå om allerede trykket på timer-objekt
 
     //get svg from upload file or else persistent uploaded svg object stored i window.name
-    if (svg != null) {
+    if (svg != null && svg != false) {
       this.svg = svg;
       window.name = this.svg;
-    } else if (window.name != "null") {
+    } else if (window.name.length > 50) {
       this.svg = window.name;
     } else {
       this.svg == null;
