@@ -39,9 +39,15 @@ export default class MatteWidget {
     this.audioEl = new Audio();
     this.timerInvoked = false; //brukes for å anslå om allerede trykket på timer-objekt
 
-    //let ff = document.getElementById("saved_svgobj")
-    //ff.value =
-    this.svg = svg;
+    //get svg from upload file or else persistent uploaded svg object stored i window.name
+    if (svg != null) {
+      this.svg = svg;
+      window.name = this.svg;
+    } else if (window.name != "null") {
+      this.svg = window.name;
+    } else {
+      this.svg == null;
+    }
 
     this.size_src_obj = 0; //reset size of object when replaying
     this.already_replay = false; //checks if new replay
