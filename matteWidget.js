@@ -63,16 +63,19 @@ export default class MatteWidget {
     customNav.init();
     document.getElementById(this.divElementId).classList.add("matte-widget");
 
+    const size = options.playback ? "90%" : "100%";
     this.svgelement = SVG(this.divElementId).size("100%", "100%");
     this.svgelement.viewbox(0, 0, this.config.viewBox.x, this.config.viewBox.y);
-    this.width_svg = "100%";
-    this.height_svg = "100%";
+    this.width_svg = size;
+    this.height_svg = size;
     this.targets;
     this.countdown_msec = 10000;
     this.timeout_msec = 3000;
 
     this.vars = {};
-    this.answer = answer || { log: [], states: [] };
+
+    this.answer = answer || [];
+    //this.answer = answer || { log: [], states: [] };
     if (this.answer.log !== undefined) this.answer = this.answer.log;
 
     //this.onAnswer = onAnswer;
@@ -774,7 +777,10 @@ var matteWidget = {
     "https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/utils/Draggable.min.js"
   ],
 
-  links: ["/widgets/css/matteWidget.css"],
+  links: [
+    "/widgets/css/matteWidget.css",
+    "https://cdn.materialdesignicons.com/4.7.95/css/materialdesignicons.min.css"
+  ],
 
   widgetClass: MatteWidget,
   contributesAnswer: true,

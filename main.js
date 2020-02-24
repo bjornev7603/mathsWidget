@@ -70,8 +70,8 @@ SVGUpload.onchange = inn => {
 //Onanswer is callback
 //Answer is previous
 let onAnswer = answer => {
-  ans.log = answer;
-  console.log(answer);
+  ans.log = answer != null ? answer : [];
+  //console.log(answer);
 };
 
 /* fetch(`./configs/${configFile}`)
