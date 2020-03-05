@@ -10,13 +10,17 @@
 .select {
   cursor: pointer;
 }
-.framed/* ,
-.framed > text,
-.framed > g > rect,
-.framed > rect,
-.framed > image,
-.framed > g > image,
-.framed > ellipse */ {
+.framed_ios,
+.framed_ios > text,
+.framed_ios > g > rect,
+.framed_ios > rect,
+.framed_ios > image,
+.framed_ios > g > image,
+.framed_ios > ellipse {
+  outline: 3px solid green;
+}
+
+.framed {
   outline: 3px solid green;
 }
 

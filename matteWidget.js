@@ -56,6 +56,10 @@ export default class MatteWidget {
 
     this.svgimage;
 
+    //if Ipad (ioS), additional dom elements is given CSS class,
+    //because ioS does not allow styling of container elements
+    this.selected_class = this.getOS() == "iOS" ? "framed_ios" : "framed";
+
     this.size_src_obj = 0; //reset size of object when replaying
     this.already_replay = false; //checks if new replay
     this.x_offset = [];
@@ -164,7 +168,7 @@ export default class MatteWidget {
     //reset select element
     var memb = document.getElementsByClassName("select");
     for (var i = 0; i < memb.length; i++) {
-      memb[i].classList.toggle("framed", false);
+      memb[i].classList.toggle(this.selected_class, false);
       memb[i].classList.toggle("unframed", false);
     }
 
@@ -277,6 +281,30 @@ export default class MatteWidget {
   is_numeric(str) {
     return /^\d+$/.test(str);
   }
+
+  getOS() {
+    var userAgent = window.navigator.userAgent,
+      platform = window.navigator.platform,
+      macosPlatforms = ["Macintosh", "MacIntel", "MacPPC", "Mac68K"],
+      windowsPlatforms = ["Win32", "Win64", "Windows", "WinCE"],
+      iosPlatforms = ["iPhone", "iPad", "iPod"],
+      os = null;
+
+    if (macosPlatforms.indexOf(platform) !== -1) {
+      os = "Mac OS";
+    } else if (iosPlatforms.indexOf(platform) !== -1) {
+      os = "iOS";
+    } else if (windowsPlatforms.indexOf(platform) !== -1) {
+      os = "Windows";
+    } else if (/Android/.test(userAgent)) {
+      os = "Android";
+    } else if (!os && /Linux/.test(platform)) {
+      os = "Linux";
+    }
+
+    return os;
+  }
+
   //******************************************************************* */
   //PLAYBACK: Main logic for emulating log event through svg actions
   replay_svg(arg) {
@@ -353,11 +381,11 @@ export default class MatteWidget {
       case "click":
         var memb = document.getElementsByClassName("select");
         for (var i = 0; i < memb.length; i++) {
-          memb[i].classList.toggle("framed", false);
+          memb[i].classList.toggle(this.selected_class, false);
           memb[i].classList.toggle("unframed", false);
         }
         let svg_sel_el = SVG().select("#" + logg.obj).members[0].node;
-        svg_sel_el.classList.toggle("framed", true);
+        svg_sel_el.classList.toggle(this.selected_class, true);
 
         break;
     }
@@ -599,10 +627,10 @@ export default class MatteWidget {
     SVG.select(".select").on("click", event => {
       var memb = document.getElementsByClassName("select");
       for (var i = 0; i < memb.length; i++) {
-        memb[i].classList.toggle("framed", false);
+        memb[i].classList.toggle(this.selected_class, false);
         memb[i].classList.toggle("unframed", false);
       }
-      event.currentTarget.classList.toggle("framed", true);
+      event.currentTarget.classList.toggle(this.selected_class, true);
       //logger hendelser
       this.setEventdata("click", event, "", widgetThis);
     });
