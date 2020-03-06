@@ -138,7 +138,10 @@ export default class MatteWidget {
     //***************************
     //Speak on page load
     //***************************
-    this.audioEl.src = this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
+    let loc =
+      document.location.href.includes(":55") == false ? document.location : "";
+    this.audioEl.src =
+      loc + this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
     this.audioEl.play().catch(e => console.warn(e));
 
     if (this.svg == null || this.svg == 1) {
