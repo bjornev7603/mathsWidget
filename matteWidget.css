@@ -130,12 +130,12 @@ body {
 .playback-tool {
   text-align: center;
   vertical-align: center;
-  height: 30px;
-  width: 35px;
+  height: 40px;
+  width: 50px;
   margin: 6px 3px;
   /* color: #e4e4e4; */
   line-height: 30px;
-  font-size: 24px;
+  font-size: 34px;
   cursor: pointer;
   border: 2px solid gray;
   border-radius: 4px;

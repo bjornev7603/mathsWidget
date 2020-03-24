@@ -1,5 +1,5 @@
 export default class MatteWidget {
-  // class MatteWidget {
+  //class MatteWidget {
   constructor(divElementId, config, answer = null, onAnswer, options) {
     // DEBUG if playback
     console.log(
@@ -21,7 +21,8 @@ export default class MatteWidget {
     this.eventHandlers = {
       move: arg => this.replay_svg(arg),
       hit: arg => this.replay_svg(arg),
-      click: arg => this.replay_svg(arg)
+      click: arg => this.replay_svg(arg),
+      timer_click: arg => this.replay_svg(arg)
 
       //RESET: () => this.api.reset()
     };
@@ -73,6 +74,7 @@ export default class MatteWidget {
 
     customNav.init();
     document.getElementById(this.divElementId).classList.add("matte-widget");
+    this.divContainer = document.getElementById("widget-container");
 
     const size = options.playback ? "90%" : "100%";
     this.svgelement = SVG(this.divElementId).size("100%", "100%");
@@ -95,6 +97,11 @@ export default class MatteWidget {
     }
 
     this.buildDOM();
+
+    if (this.answer !== undefined && this.answer.length == 0 && this.playback) {
+      this.show_msg("This log is empty");
+      //return;
+    }
 
     //if playback mode and there is log data (answer) to emulate
     if (this.playback && this.answer.length) {
@@ -162,6 +169,26 @@ export default class MatteWidget {
     }
 
     //SVG event handlers
+  }
+
+  show_msg(msg) {
+    let msgDiv;
+    msgDiv = document.getElementById("msgdiv");
+    if (msgDiv != undefined) {
+      msgDiv.remove();
+    }
+
+    msgDiv = document.createElement("div");
+    msgDiv.id = "msgdiv";
+    msgDiv.classList.add("drawing-playback-container");
+    msgDiv.style = "float: left";
+    this.divContainer.prepend(msgDiv);
+
+    let span = document.createElement("span");
+    span.style = "color: red; font-weight: bold;";
+    msgDiv.append(span);
+    let msgTxt = document.createTextNode(msg);
+    span.append(msgTxt);
   }
 
   //********************************************** */
@@ -313,6 +340,12 @@ export default class MatteWidget {
   replay_svg(arg) {
     if (arg == 0) this.reset_svg(arg, this.answer);
 
+    var svg_pricks = SVG.select(".disappear").members;
+    for (var i = 0; i < svg_pricks.length; i++) {
+      svg_pricks[i].node.classList.toggle("disappear", false);
+      svg_pricks[i].node.classList.toggle("re-appear", true);
+    }
+
     let logg = this.answer[arg];
     //Select specific svg node element that corresponds to log row
     logg.obj = this.is_numeric(logg.obj[0]) ? "gr" + logg.obj : logg.obj;
@@ -382,11 +415,17 @@ export default class MatteWidget {
         }
         break;
       case "click":
+      case "timer_click":
         var memb = document.getElementsByClassName("select");
+        var memb_oth = document.getElementsByClassName("start_timer");
         for (var i = 0; i < memb.length; i++) {
           memb[i].classList.toggle(this.selected_class, false);
           memb[i].classList.toggle("unframed", false);
+          if (memb_oth[0].classList.length > 0)
+            memb_oth[0].classList.toggle("unframed", false);
+          memb_oth[0].classList.toggle(this.selected_class, false);
         }
+
         let svg_sel_el = SVG().select("#" + logg.obj).members[0].node;
         svg_sel_el.classList.toggle(this.selected_class, true);
 
@@ -464,8 +503,12 @@ export default class MatteWidget {
   //load image into SVG DOM tree
   parseSVG = svgResp => {
     var doc = new DOMParser().parseFromString(svgResp, "image/svg+xml");
-    doc.querySelector("svg").setAttribute("width", this.width_svg);
-    doc.querySelector("svg").setAttribute("height", this.height_svg);
+    doc
+      .querySelector("svg")
+      .setAttribute("width", this.width_svg > 0 ? this.width_svg : "100%");
+    doc
+      .querySelector("svg")
+      .setAttribute("height", this.height_svg > 0 ? this.height_svg : "100%");
     window.svgdoc = doc;
     this.svgimage = this.svgelement.svg(
       new XMLSerializer().serializeToString(doc)
@@ -599,6 +642,8 @@ export default class MatteWidget {
           }
           clearTimeout(mintimer);
         }, widgetThis.countdown_msec);
+
+        this.setEventdata("timer_click", event, "", widgetThis);
       }
     });
 

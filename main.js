@@ -44,9 +44,9 @@ fileJsonUpload.onchange = inn => {
   let fr = new FileReader();
   fr.onload = evt => {
     let jsonobj = JSON.parse(evt.target.result);
-    logdata_json = jsonobj;
+    let logdata_json = jsonobj;
     console.log(logdata_json);
-    makeWidget(currentConfig, logdata_json.log, null);
+    makeWidget(currentConfig, logdata_json, true);
   };
   fr.readAsText(file);
 };
