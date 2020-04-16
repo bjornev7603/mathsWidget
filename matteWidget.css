@@ -17,11 +17,29 @@
 .framed_ios > image,
 .framed_ios > g > image,
 .framed_ios > ellipse {
-  outline: 3px solid green;
+  outline: 3px solid blueviolet;
 }
 
 .framed {
-  outline: 3px solid green;
+  outline: 3px solid blueviolet;
+}
+
+.in_color > tspan,
+.in_color > text > tspan {
+  fill: blue;
+}
+
+.sources_disappear {
+  visibility: hidden;
+}
+
+.hit_target {
+  visibility: hidden;
+  color: blue;
+}
+
+.tap {
+  padding: 0px 0px 50px 50px;
 }
 
 .unframed,
@@ -30,7 +48,7 @@
 .unframed > rect,
 .unframed > image,
 .unframed > ellipse {
-  outline: 0px dotted green;
+  outline: 0px dotted blueviolet;
 }
 
 .re-appear {

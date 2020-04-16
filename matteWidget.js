@@ -12,7 +12,7 @@ export default class MatteWidget {
     console.log(
       options && options.svg
         ? "Loaded svg from Main(test framework) at folk.ntnu.no"
-        : "Widget loaded svg normally, withoiut passing svg object"
+        : "Widget loaded svg normally, without passing svg object in options"
     );
 
     this.divElementId = divElementId;
@@ -48,6 +48,7 @@ export default class MatteWidget {
     //otherwise fetch uploaded svg object stored i window.name
     if (options && options.svg != null && options.svg != false) {
       this.svg = options.svg;
+      this.filename = options.filename;
       window.name = this.svg;
     } else if (window.name.length > 50) {
       this.svg = window.name;
@@ -146,7 +147,9 @@ export default class MatteWidget {
     //Speak on page load
     //***************************
     let loc =
-      document.location.href.includes(":55") == false ? document.location : "";
+      document.location.href.includes(":55") == false
+        ? document.location.href
+        : "";
     this.audioEl.src =
       loc + this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
     this.audioEl.play().catch(e => console.warn(e));
@@ -201,6 +204,9 @@ export default class MatteWidget {
       memb[i].classList.toggle(this.selected_class, false);
       memb[i].classList.toggle("unframed", false);
     }
+
+    if (memb[0].classList.contains("colorized"))
+      this.selected_class = "in_color";
 
     let src_el = "{g}";
     let lg_moved_obj = [];
@@ -421,9 +427,11 @@ export default class MatteWidget {
         for (var i = 0; i < memb.length; i++) {
           memb[i].classList.toggle(this.selected_class, false);
           memb[i].classList.toggle("unframed", false);
-          if (memb_oth[0].classList.length > 0)
+
+          if (memb_oth.length > 0 && memb_oth[0].classList.length > 0) {
             memb_oth[0].classList.toggle("unframed", false);
-          memb_oth[0].classList.toggle(this.selected_class, false);
+            memb_oth[0].classList.toggle(this.selected_class, false);
+          }
         }
 
         let svg_sel_el = SVG().select("#" + logg.obj).members[0].node;
@@ -535,7 +543,8 @@ export default class MatteWidget {
 
     this.targets = SVG.select(".target");
     this.size_src_obj =
-      SVG().select(".source").members.length > 0
+      SVG().select(".source").members.length > 0 &&
+      SVG().select(".source").members[0].node.transform.animVal.length > 0
         ? SVG().select(".source").members[0].node.transform.animVal[0].matrix[
             "a"
           ]
@@ -678,6 +687,14 @@ export default class MatteWidget {
         memb[i].classList.toggle(this.selected_class, false);
         memb[i].classList.toggle("unframed", false);
       }
+      if (event.currentTarget.classList.contains("colorized")) {
+        this.selected_class = "in_color";
+      }
+
+      if (event.currentTarget.classList.contains("no_frame")) {
+        this.selected_class = "unframed";
+      }
+
       event.currentTarget.classList.toggle(this.selected_class, true);
       //logger hendelser
       this.setEventdata("click", event, "", widgetThis);
@@ -744,6 +761,7 @@ export default class MatteWidget {
               this.target.attributes["selectvalue"] != null
                 ? this.target.attributes["selectvalue"].value
                 : "";
+
             //logger hendelser
             widgetThis.setEventdata(
               "hit",
@@ -767,6 +785,15 @@ export default class MatteWidget {
                 scale: 0,
                 svgOrigin: t
               });
+            }
+
+            let sources = SVG.select(".source").members;
+            for (var xx = 0; xx < sources.length; xx++) {
+              //if (sources[i].node.id != this.target.id) {
+              if (sources[i].node.classList.contains("all_disappear")) {
+                sources[xx].node.classList.toggle("sources_disappear", true);
+                sources[xx].node.classList.toggle("source", false);
+              }
             }
 
             //***************************
@@ -827,7 +854,8 @@ export default class MatteWidget {
 
   //hente tre første siffer i filnavn
   getFileNumstr = () => {
-    return this.config.svgUrl.substr(this.config.svgUrl.search("[0-9]{3}"), 3);
+    let fnm = this.filename != undefined ? this.filename : this.config.svgUrl;
+    return fnm.substr(fnm.search("[0-9]{3}"), 3);
   };
 
   //flervalg(select)element hentes fra streng

@@ -59,7 +59,7 @@ SVGUpload.onchange = inn => {
     //let svgobj = JSON.parse(evt.target.result);
     svg = evt.target.result;
     console.log("loading svg file");
-    makeWidget(currentConfig, null, null, svg);
+    makeWidget(currentConfig, null, null, svg, file.name);
   };
   fr.readAsText(file);
 };
@@ -82,7 +82,13 @@ fetch(`./configs/${configFile}`)
     makeWidget(config);
   });
 
-function makeWidget(config, answer = null, playback = false, svg = null) {
+function makeWidget(
+  config,
+  answer = null,
+  playback = false,
+  svg = null,
+  filename = null
+) {
   // let divEl = document.getElementById('widget')
   if (divContainer.hasChildNodes())
     divContainer.removeChild(divContainer.firstChild);
@@ -97,7 +103,8 @@ function makeWidget(config, answer = null, playback = false, svg = null) {
   divContainer.append(divEl);
   window.widget = new Widget(divEl.id, config, answer, onAnswer, {
     playback: playback,
-    svg: svg
+    svg: svg,
+    filename: filename
   });
 }
 
