@@ -538,10 +538,10 @@ export default class MatteWidget {
     //         hitTest()
     // )
 
+    this.targets = SVG.select(".target");
     //save "this" object to make it available for calls from inside event handlers/methods
     let widgetThis = this;
 
-    this.targets = SVG.select(".target");
     this.size_src_obj =
       SVG().select(".source").members.length > 0 &&
       SVG().select(".source").members[0].node.transform.animVal.length > 0
@@ -668,10 +668,15 @@ export default class MatteWidget {
       if (!event.currentTarget.classList.contains("next")) {
         //snakk på nesteknapp allerede håndtert i onNext
 
+        //if speak selected number, no file num needed
+        let filenum = event.currentTarget.classList.contains("select")
+          ? ""
+          : this.getFileNumstr();
+
         //selve lydfilnavnet
         this.audioEl.src =
           this.config.mp3BaseUrl +
-          this.getFileNumstr() +
+          filenum +
           this.getSelstr(event.currentTarget) + //hvis flervalg (select), hentes evt verdi som skal tales
           ".m4a";
         this.audioEl.play().catch(e => console.warn(e));
@@ -790,7 +795,7 @@ export default class MatteWidget {
             let sources = SVG.select(".source").members;
             for (var xx = 0; xx < sources.length; xx++) {
               //if (sources[i].node.id != this.target.id) {
-              if (sources[i].node.classList.contains("all_disappear")) {
+              if (sources[xx].node.classList.contains("all_disappear")) {
                 sources[xx].node.classList.toggle("sources_disappear", true);
                 sources[xx].node.classList.toggle("source", false);
               }
@@ -799,11 +804,17 @@ export default class MatteWidget {
             //***************************
             //Speak on target hit
             //***************************
-            widgetThis.audioEl.src =
-              widgetThis.config.mp3BaseUrl +
-              widgetThis.getFileNumstr() +
-              "hit.m4a";
-            widgetThis.audioEl.play().catch(e => console.warn(e));
+            if (
+              widgetThis.targets.members[i].node.classList.contains(
+                "speak_when_hit"
+              )
+            ) {
+              widgetThis.audioEl.src =
+                widgetThis.config.mp3BaseUrl +
+                widgetThis.getFileNumstr() +
+                "hit.m4a";
+              widgetThis.audioEl.play().catch(e => console.warn(e));
+            }
           }
         }
       }
