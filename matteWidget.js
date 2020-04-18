@@ -1,6 +1,6 @@
-export default class MatteWidget {
-  //class MatteWidget {
-  constructor(divElementId, config, answer = null, onAnswer, options) {
+//export default class MatteWidget {
+//class MatteWidget {
+  //constructor(divElementId, config, answer = null, onAnswer, options) {
     // DEBUG if playback
     console.log(
       options && options.playback
@@ -77,8 +77,8 @@ export default class MatteWidget {
     document.getElementById(this.divElementId).classList.add("matte-widget");
     this.divContainer = document.getElementById("widget-container");
 
-    const size = options.playback ? "90%" : "100%";
-    this.svgelement = SVG(this.divElementId).size("100%", "100%");
+    const size = options.playback ? "100%" : "90%";
+    this.svgelement = SVG(this.divElementId).size("85%", "85%");
     this.svgelement.viewbox(0, 0, this.config.viewBox.x, this.config.viewBox.y);
     this.width_svg = size;
     this.height_svg = size;
