@@ -1,6 +1,6 @@
-//export default class MatteWidget {
-//class MatteWidget {
-  //constructor(divElementId, config, answer = null, onAnswer, options) {
+export default class MatteWidget {
+  //class MatteWidget {
+  constructor(divElementId, config, answer = null, onAnswer, options) {
     // DEBUG if playback
     console.log(
       options && options.playback
@@ -667,6 +667,8 @@
       //*************************************
       if (!event.currentTarget.classList.contains("next")) {
         //snakk på nesteknapp allerede håndtert i onNext
+
+        this.setEventdata("click", event, "", widgetThis);
 
         //if speak selected number, no file num needed
         let filenum = event.currentTarget.classList.contains("select")
