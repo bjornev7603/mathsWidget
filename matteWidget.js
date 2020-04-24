@@ -17,27 +17,17 @@ export default class MatteWidget {
 
     this.divElementId = divElementId;
 
-    //playback events
-    this.eventHandlers = {
-      move: arg => this.replay_svg(arg),
-      hit: arg => this.replay_svg(arg),
-      click: arg => this.replay_svg(arg),
-      timer_click: arg => this.replay_svg(arg)
-
-      //RESET: () => this.api.reset()
-    };
-
     const default_config = {
-      svgUrl: "streng",
-      mp3BaseUrl: "mappe hvor mp3'er er",
+      svgUrl: null,
+      mp3BaseUrl: null,
       viewBox: {
         x: 1024,
-        y: 768
-      }
+        y: 768,
+      },
     };
     this.config = {
       ...default_config,
-      ...config
+      ...config,
     };
     this.answer = answer || [];
     this.onAnswer = onAnswer;
@@ -89,23 +79,61 @@ export default class MatteWidget {
     this.vars = {};
 
     this.answer = answer || [];
-    //this.answer = answer || { log: [], states: [] };
-    if (this.answer.log !== undefined) this.answer = this.answer.log;
-
-    //this.onAnswer = onAnswer;
-    if (options.playback) {
-      this.playback = options.playback;
-    }
 
     this.buildDOM();
 
-    if (this.answer !== undefined && this.answer.length == 0 && this.playback) {
-      this.show_msg("This log is empty");
-      //return;
+    if (options.playback) {
+      this.playback = options.playback;
+      this.initPlayback();
     }
 
+    //***************************
+    //Speak on page load
+    //***************************
+    let loc =
+      document.location.href.includes(":55") == false
+        ? document.location.href
+        : "";
+    this.audioEl.src =
+      loc + this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
+    this.audioEl.play().catch((e) => console.warn(e));
+
+    if (this.svg == null || this.svg == 1) {
+      fetch(this.svg == null ? this.config.svgUrl : this.svg, {
+        method: "GET",
+        mode: "no-cors",
+      })
+        .then((resp) => resp.text())
+        .then((svgl) => {
+          this.parseSVG(svgl);
+        })
+        .then((pm) => {
+          this.runscript();
+        });
+    } else {
+      this.parseSVG(this.svg);
+      this.runscript();
+    }
+
+    //SVG event handlers
+  }
+
+  // Initialize playback
+  // Sets eventhandlers for playback and internal playbackstate
+  initPlayback() {
+    //playback events
+    this.eventHandlers = {
+      move: (arg) => this.replay_svg(arg),
+      hit: (arg) => this.replay_svg(arg),
+      select_click: (arg) => this.replay_svg(arg),
+      next_click: (arg) => this.replay_svg(arg),
+      info_click: (arg) => this.replay_svg(arg),
+      timer_click: (arg) => this.replay_svg(arg),
+
+      //RESET: () => this.api.reset()
+    };
     //if playback mode and there is log data (answer) to emulate
-    if (this.playback && this.answer.length) {
+    if (this.answer.length) {
       this.buildPlayback();
       let skip = false;
       this.state = {
@@ -139,39 +167,11 @@ export default class MatteWidget {
           this.state.nextevent = this.answer[this.state.current].event;
 
           return { action: action, index: index, skip: skip };
-        }
+        },
       };
-    }
-
-    //***************************
-    //Speak on page load
-    //***************************
-    let loc =
-      document.location.href.includes(":55") == false
-        ? document.location.href
-        : "";
-    this.audioEl.src =
-      loc + this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
-    this.audioEl.play().catch(e => console.warn(e));
-
-    if (this.svg == null || this.svg == 1) {
-      fetch(this.svg == null ? this.config.svgUrl : this.svg, {
-        method: "GET",
-        mode: "no-cors"
-      })
-        .then(resp => resp.text())
-        .then(svgl => {
-          this.parseSVG(svgl);
-        })
-        .then(pm => {
-          this.runscript();
-        });
     } else {
-      this.parseSVG(this.svg);
-      this.runscript();
+      this.show_msg("This log is empty");
     }
-
-    //SVG event handlers
   }
 
   show_msg(msg) {
@@ -199,14 +199,18 @@ export default class MatteWidget {
   //********************************************** */
   reset_svg(ind, lg) {
     //reset select element
-    var memb = document.getElementsByClassName("select");
-    for (var i = 0; i < memb.length; i++) {
-      memb[i].classList.toggle(this.selected_class, false);
-      memb[i].classList.toggle("unframed", false);
-    }
 
-    if (memb[0].classList.contains("colorized"))
-      this.selected_class = "in_color";
+    var memb = document.querySelectorAll(".select, .start_timer, .next, .info");
+    if (memb.length > 0) {
+      for (var j = 0; j < memb.length; j++) {
+        memb[j].classList.toggle(this.selected_class, false);
+        memb[j].classList.toggle("unframed", false);
+
+        if (memb[j].classList.contains("colorized")) {
+          //  this.selected_class = "in_color";
+        }
+      }
+    }
 
     let src_el = "{g}";
     let lg_moved_obj = [];
@@ -247,20 +251,25 @@ export default class MatteWidget {
             //(some svgs have deviating posisions in transform matrix, or different group objects have the same x /y pos in matrix despite sub els have diff x / y
             //define px difference between transform matrix x/y and log x/y to get real paths)
 
+            let x_val = typeof lg === "object" ? lg[0].x : lg.x;
+            let y_val = typeof lg === "object" ? lg[0].y : lg.y;
+
+            //deactivate default distortion adjustments for now
+            x_val = 0;
+            y_val = 0;
+
             //diff x
             if (log_objid in this.x_offset_diff == false) {
               this.x_offset[log_objid] =
                 svg_obj.node.transform.animVal[0].matrix["e"];
-              this.x_offset_diff[log_objid] =
-                this.x_offset[log_objid] - lg[lg_el].x[0];
+              this.x_offset_diff[log_objid] = this.x_offset[log_objid] - x_val;
             }
 
             //diff y
             if (log_objid in this.y_offset_diff == false) {
               this.y_offset[log_objid] =
                 svg_obj.node.transform.animVal[0].matrix["f"];
-              this.y_offset_diff[log_objid] =
-                this.y_offset[log_objid] - lg[lg_el].y[0];
+              this.y_offset_diff[log_objid] = this.y_offset[log_objid] - y_val;
             }
           }
 
@@ -414,23 +423,23 @@ export default class MatteWidget {
           TweenLite.to(svg_ele, 0.1, {
             opacity: 0,
             scale: 0,
-            svgOrigin: t
+            svgOrigin: t,
           });
         } else {
           svg_ele.node.style.opacity = "0.66";
         }
         break;
-      case "click":
+      case "select_click":
       case "timer_click":
-        var memb = document.getElementsByClassName("select");
-        var memb_oth = document.getElementsByClassName("start_timer");
-        for (var i = 0; i < memb.length; i++) {
-          memb[i].classList.toggle(this.selected_class, false);
-          memb[i].classList.toggle("unframed", false);
-
-          if (memb_oth.length > 0 && memb_oth[0].classList.length > 0) {
-            memb_oth[0].classList.toggle("unframed", false);
-            memb_oth[0].classList.toggle(this.selected_class, false);
+      case "next_click":
+      case "info_click":
+        var memb = document.querySelectorAll(
+          ".select, .start_timer, .next, .info"
+        );
+        if (memb.length > 0) {
+          for (var j = 0; j < memb.length; j++) {
+            memb[j].classList.toggle(this.selected_class, false);
+            memb[j].classList.toggle("unframed", false);
           }
         }
 
@@ -480,8 +489,8 @@ export default class MatteWidget {
           return toggle;
         },
         icon: "mdi-skip-next",
-        reset_icon: "mdi-skip-backward"
-      }
+        reset_icon: "mdi-skip-backward",
+      },
     ];
     for (let tool of actions) {
       let div = document.createElement("div");
@@ -509,7 +518,7 @@ export default class MatteWidget {
 
   //****************************** */
   //load image into SVG DOM tree
-  parseSVG = svgResp => {
+  parseSVG(svgResp) {
     var doc = new DOMParser().parseFromString(svgResp, "image/svg+xml");
     doc
       .querySelector("svg")
@@ -521,7 +530,7 @@ export default class MatteWidget {
     this.svgimage = this.svgelement.svg(
       new XMLSerializer().serializeToString(doc)
     );
-  };
+  }
 
   runscript() {
     // HANDLER overview:
@@ -553,7 +562,7 @@ export default class MatteWidget {
     //fetching svg top node for Tweenlite touch action
     var imid = this.svgimage.node.id;
     TweenLite.set("#" + imid, {
-      touchAction: "manipulation"
+      touchAction: "manipulation",
     });
 
     /************** */
@@ -561,16 +570,19 @@ export default class MatteWidget {
     //*************************************************************
     //CLICK NEXT BUTTON
     //*************************************************************
-    SVG.select(".next").on("click", event => {
+    SVG.select(".next").on("click", (event) => {
       //***************************
       //Speak on click/touch next button
       //***************************
       //this.onAnswer(this.answer);
 
+      //if next button is clicked, it is logged
+      this.setEventdata("next_click", event, "" /* , widgetThis */);
+
       if (event.currentTarget.classList.contains("speak")) {
         this.audioEl.src =
           this.config.mp3BaseUrl + this.getFileNumstr() + "next.m4a";
-        this.audioEl.play().catch(e => {
+        this.audioEl.play().catch((e) => {
           console.warn(e);
           customNav.next();
         });
@@ -587,7 +599,7 @@ export default class MatteWidget {
     //1. Anslår ant sekund og starter timer
     //2. Fading vha opasitetsendring
     //3. Skjuler eller viser prikker i brikkeoppgaver
-    SVG.select(".start_timer").on("click", event => {
+    SVG.select(".start_timer").on("click", (event) => {
       //hvis attr "single_attempt" satt i svg for at Timer ikke kan restartes
       let att = event.currentTarget.attributes["single_attempt"];
       if (
@@ -622,7 +634,7 @@ export default class MatteWidget {
 
         //viser tid som er igjen ved å fade ut et objekt av klassen "fade"et av timer-varigheten
         var countDownDate = new Date().getTime() + widgetThis.countdown_msec;
-        var x = setInterval(function() {
+        var x = setInterval(function () {
           let now = new Date().getTime();
           // Find the distance between now and the count down date
           let distance = countDownDate - now;
@@ -643,7 +655,7 @@ export default class MatteWidget {
         }, 500); //msek
 
         //Etter noen sekund forsvinner brikkeprikkene (blir hvite)
-        let mintimer = setTimeout(function() {
+        let mintimer = setTimeout(function () {
           var svg_pricks = SVG.select(".re-appear").members;
           for (var i = 0; i < svg_pricks.length; i++) {
             svg_pricks[i].node.classList.toggle("disappear", true);
@@ -652,7 +664,7 @@ export default class MatteWidget {
           clearTimeout(mintimer);
         }, widgetThis.countdown_msec);
 
-        this.setEventdata("timer_click", event, "", widgetThis);
+        this.setEventdata("timer_click", event, "" /* , widgetThis */);
       }
     });
 
@@ -660,15 +672,21 @@ export default class MatteWidget {
     //få objekt til å snakke når de trykkes på,
     //spille mp3-filer m bestemte navn [tresifra oppgkode][speak][event][evtl selectverdi]
     //******************************************************* */
-    SVG.select(".speak").on("click", event => {
+    SVG.select(".speak").on("click", (event) => {
       //henter mp3 fil fra en katalog, navn samsvarer med elementets klassenavn (eller flere)
       //*************************************
       //Snakker ved trykk ekorn eller på flervalg(select)element
       //*************************************
+
       if (!event.currentTarget.classList.contains("next")) {
         //snakk på nesteknapp allerede håndtert i onNext
 
-        this.setEventdata("click", event, "", widgetThis);
+        //if click on e.g. info star, this is logged
+        if (event.currentTarget.classList.contains("info")) {
+          this.setEventdata("info_click", event, "" /* , widgetThis */);
+        } //else {
+        //this.setEventdata("click", event, "", widgetThis);
+        //}
 
         //if speak selected number, no file num needed
         let filenum = event.currentTarget.classList.contains("select")
@@ -681,14 +699,14 @@ export default class MatteWidget {
           filenum +
           this.getSelstr(event.currentTarget) + //hvis flervalg (select), hentes evt verdi som skal tales
           ".m4a";
-        this.audioEl.play().catch(e => console.warn(e));
+        this.audioEl.play().catch((e) => console.warn(e));
       }
     });
 
     //******************************************************* */
     //Klikk på flervalg(select) medfører ramme rundt elementet, og loggføring (av x, y, objekt og verdi i selectelement)
     //******************************************************* */
-    SVG.select(".select").on("click", event => {
+    SVG.select(".select").on("click", (event) => {
       var memb = document.getElementsByClassName("select");
       for (var i = 0; i < memb.length; i++) {
         memb[i].classList.toggle(this.selected_class, false);
@@ -698,17 +716,19 @@ export default class MatteWidget {
         this.selected_class = "in_color";
       }
 
+      //if
       if (event.currentTarget.classList.contains("no_frame")) {
         this.selected_class = "unframed";
+      } else {
       }
 
       event.currentTarget.classList.toggle(this.selected_class, true);
       //logger hendelser
-      this.setEventdata("click", event, "", widgetThis);
+      this.setEventdata("select_click", event, "" /* , widgetThis */);
     });
 
     //SKRIV INN TALL (brukes hvis behov for å legge til noe i et tekstfelt generert dynamisk ved klikk på noe i svg)
-    SVG.select(".writenumber").on("click", event => {
+    SVG.select(".writenumber").on("click", (event) => {
       var t = (event.currentTarget.innerHTML =
         "<div contenteditable='true'><text>Innhold</text></div>");
     });
@@ -721,19 +741,19 @@ export default class MatteWidget {
         minX: -4000,
         maxX: 1024,
         minY: -4005,
-        maxY: 1024
+        maxY: 1024,
       },
 
-      onDragLeave: function() {
+      onDragLeave: function () {
         //this.update();
       },
 
-      onDragStart: function(e) {
+      onDragStart: function (e) {
         //logger hendelser
-        event = widgetThis.setEventdata("move", this, "", widgetThis);
+        event = widgetThis.setEventdata("move", this, "" /* , widgetThis */);
       },
 
-      onDrag: function(evt) {
+      onDrag: function (evt) {
         var terskel = 6;
         let lastX = event.x[event.x.length - 1],
           lastY = event.y[event.y.length - 1];
@@ -751,7 +771,7 @@ export default class MatteWidget {
         }
       },
 
-      onDragEnd: function(e) {
+      onDragEnd: function (e) {
         /* event.x.push(this.x);
         event.y.push(this.y);
         event.time.push(Date.now()); */
@@ -769,12 +789,20 @@ export default class MatteWidget {
                 ? this.target.attributes["selectvalue"].value
                 : "";
 
+            let targ_value =
+              widgetThis.targets.members[i].node.attributes["targetvalue"] !=
+              null
+                ? widgetThis.targets.members[i].node.attributes["targetvalue"]
+                    .value
+                : "";
+
             //logger hendelser
             widgetThis.setEventdata(
               "hit",
               this,
               widgetThis.targets.members[i].node.id,
-              widgetThis
+              //widgetThis,
+              targ_value
             );
 
             var pos = widgetThis.targets.members[i].bbox();
@@ -790,7 +818,7 @@ export default class MatteWidget {
               TweenLite.to(this.target, 0.1, {
                 opacity: 0,
                 scale: 0,
-                svgOrigin: t
+                svgOrigin: t,
               });
             }
 
@@ -815,11 +843,11 @@ export default class MatteWidget {
                 widgetThis.config.mp3BaseUrl +
                 widgetThis.getFileNumstr() +
                 "hit.m4a";
-              widgetThis.audioEl.play().catch(e => console.warn(e));
+              widgetThis.audioEl.play().catch((e) => console.warn(e));
             }
           }
         }
-      }
+      },
     });
   }
 
@@ -829,50 +857,55 @@ export default class MatteWidget {
     this.onAnswer(this.answer);
   }
 
-  //logging pos x|y, obj, val, ev_type, etc
+  //logging pos x|y, obj, selectval, target_val, ev_type, etc
   //para ev_type, eventobj (x|y value), object, widget (for variables)
-  setEventdata = (evtype, ev, hitobj, w_this) => {
-    let an = w_this.answer;
-    let trgobj;
-    if (ev.currentTarget != null) trgobj = ev.currentTarget;
-    else if (ev.target != null) trgobj = ev.target;
-    else trgobj = "";
+  setEventdata(evtype, ev, hitobj, trg_val = "") {
+    let trgobj =
+      ev.currentTarget != null
+        ? ev.currentTarget
+        : ev.target != null
+        ? ev.target
+        : "";
+    let [x, y] = evtype !== "move" ? [ev.x, ev.y] : [[ev.x], [ev.y]];
 
     const eventen = {
-      x: evtype != "move" ? ev.x : [ev.x],
-      y: evtype != "move" ? ev.y : [ev.y],
-      obj: trgobj.id != null ? trgobj.id : "emp",
-      val:
+      x: x,
+      y: y,
+      obj: trgobj.id != null ? trgobj.id : "nn",
+      s_val:
         trgobj.attributes["selectvalue"] == null
-          ? "emp"
+          ? "nn"
           : trgobj.attributes["selectvalue"].value,
 
+      target_val: trg_val,
       event: evtype,
       time: evtype != "move" ? Date.now() : [Date.now()],
       tdiff:
         evtype != "move" &&
-        an != null &&
-        an[an.length - 1] &&
-        an[an.length - 1].time != null
+        this.answer != null &&
+        this.answer[this.answer.length - 1] &&
+        this.answer[this.answer.length - 1].time != null
           ? (Date.now() -
-              an[an.length - 1].time[an[an.length - 1].time.length - 1]) /
+              this.answer[this.answer.length - 1].time[
+                this.answer[this.answer.length - 1].time.length - 1
+              ]) /
             1000
           : "",
-      hit: hitobj
+      hit: hitobj,
     };
-    w_this.updateAnswer(eventen);
+    this.updateAnswer(eventen);
     //.catch(e => console.warn("error when logging!"));
     return eventen;
-  };
+  }
 
   //hente tre første siffer i filnavn
-  getFileNumstr = () => {
+  getFileNumstr() {
     let fnm = this.filename != undefined ? this.filename : this.config.svgUrl;
     return fnm.substr(fnm.search("[0-9]{3}"), 3);
-  };
+  }
 
   //flervalg(select)element hentes fra streng
-  getSelstr = trg => {
+  getSelstr(trg) {
     let num_in_url = "";
     if (
       trg.attributes["selectvalue"] &&
@@ -883,7 +916,7 @@ export default class MatteWidget {
     } else {
       return num_in_url;
     }
-  };
+  }
 }
 
 var matteWidget = {
@@ -892,12 +925,12 @@ var matteWidget = {
     "https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.6/svg.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/plugins/CSSPlugin.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenLite.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/utils/Draggable.min.js"
+    "https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/utils/Draggable.min.js",
   ],
 
   links: [
     "/widgets/css/matteWidget.css",
-    "https://cdn.materialdesignicons.com/4.7.95/css/materialdesignicons.min.css"
+    "https://cdn.materialdesignicons.com/4.7.95/css/materialdesignicons.min.css",
   ],
 
   widgetClass: MatteWidget,
@@ -909,41 +942,41 @@ var matteWidget = {
     properties: {
       svgUrl: {
         type: "string",
-        title: "URL for svg-file"
+        title: "URL for svg-file",
       },
       mp3BaseUrl: {
         type: "string",
-        title: "URL for mp3-files"
+        title: "URL for mp3-files",
       },
       viewBox: {
         type: "object",
         properties: {
           x: {
             type: "number",
-            title: "viewbox x-value"
+            title: "viewbox x-value",
           },
           y: {
             type: "number",
-            title: "viewbox y-value"
-          }
-        }
-      }
-    }
+            title: "viewbox y-value",
+          },
+        },
+      },
+    },
   },
   jsonSchemaData: {
     svgUrl: "url for svgs",
     mp3BaseUrl: "base url for mp3-files",
     viewBox: {
       x: 1024,
-      y: 768
-    }
+      y: 768,
+    },
   },
   configStructure: {
     svgUrl: "url for svgs",
     mp3BaseUrl: "base url for mp3-files",
     viewBox: {
       x: 1024,
-      y: 768
-    }
-  }
+      y: 768,
+    },
+  },
 };

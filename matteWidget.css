@@ -10,6 +10,7 @@
 .select {
   cursor: pointer;
 }
+
 .framed_ios,
 .framed_ios > text,
 .framed_ios > g > rect,
