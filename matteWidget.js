@@ -50,7 +50,10 @@ export default class MatteWidget {
 
     //if Ipad (ioS), additional dom elements is given CSS class,
     //because ioS does not allow styling of container elements
-    this.selected_class = this.getOS() == "iOS" ? "framed_ios" : "framed";
+
+    this.selected_class =
+      /* this.getOS() == "iOS" ? */ "framed_ios" /*  : "framed" */;
+    //let css class always be framed_ios
 
     this.size_src_obj = 0; //reset size of object when replaying
     this.already_replay = false; //checks if new replay
