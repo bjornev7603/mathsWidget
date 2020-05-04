@@ -11,18 +11,30 @@
   cursor: pointer;
 }
 
-.framed_ios,
-.framed_ios > text,
-.framed_ios > g > rect,
+.framed_ios,  
+/* .framed_ios > text, */
+/* .framed_ios > g > rect, */
 .framed_ios > rect,
 .framed_ios > image,
-.framed_ios > g > image,
-.framed_ios > ellipse {
-  outline: 3px solid blueviolet;
+.framed_ios > g > image
+/*, .framed_ios > ellipse */ {
+  outline-style: solid;
+  outline-color: blueviolet;
+  outline-offset: 0vmin;
+  outline-width: medium;
 }
 
 .framed {
   outline: 3px solid blueviolet;
+}
+
+.unframed,
+.unframed > text,
+.unframed > g > rect,
+.unframed > rect,
+.unframed > image,
+.unframed > ellipse {
+  outline: 0px solid blueviolet;
 }
 
 .in_color > tspan,
@@ -41,15 +53,6 @@
 
 .tap {
   padding: 0px 0px 50px 50px;
-}
-
-.unframed,
-.unframed > text,
-.unframed > g > rect,
-.unframed > rect,
-.unframed > image,
-.unframed > ellipse {
-  outline: 0px dotted blueviolet;
 }
 
 .re-appear {

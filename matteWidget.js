@@ -1,5 +1,5 @@
-export default class MatteWidget {
-  //class MatteWidget {
+//export default class MatteWidget {
+class MatteWidget {
   constructor(divElementId, config, answer = null, onAnswer, options) {
     // DEBUG if playback
     console.log(
@@ -46,14 +46,14 @@ export default class MatteWidget {
       this.svg == null;
     }
 
-    this.svgimage;
+    this.svgimage = null;
 
     //if Ipad (ioS), additional dom elements is given CSS class,
     //because ioS does not allow styling of container elements
 
-    this.selected_class =
-      /* this.getOS() == "iOS" ? */ "framed_ios" /*  : "framed" */;
     //let css class always be framed_ios
+    this.selected_class = "framed_ios";
+    /* this.getOS() == "iOS" ? "framed_ios" : "framed"; */
 
     this.size_src_obj = 0; //reset size of object when replaying
     this.already_replay = false; //checks if new replay
@@ -580,7 +580,9 @@ export default class MatteWidget {
       //this.onAnswer(this.answer);
 
       //if next button is clicked, it is logged
-      this.setEventdata("next_click", event, "" /* , widgetThis */);
+      this.setEventdata("next_click", event);
+
+      this.audioEl.pause();
 
       if (event.currentTarget.classList.contains("speak")) {
         this.audioEl.src =
@@ -667,7 +669,7 @@ export default class MatteWidget {
           clearTimeout(mintimer);
         }, widgetThis.countdown_msec);
 
-        this.setEventdata("timer_click", event, "" /* , widgetThis */);
+        this.setEventdata("timer_click", event);
       }
     });
 
@@ -686,10 +688,8 @@ export default class MatteWidget {
 
         //if click on e.g. info star, this is logged
         if (event.currentTarget.classList.contains("info")) {
-          this.setEventdata("info_click", event, "" /* , widgetThis */);
-        } //else {
-        //this.setEventdata("click", event, "", widgetThis);
-        //}
+          this.setEventdata("info_click", event);
+        }
 
         //if speak selected number, no file num needed
         let filenum = event.currentTarget.classList.contains("select")
@@ -711,23 +711,45 @@ export default class MatteWidget {
     //******************************************************* */
     SVG.select(".select").on("click", (event) => {
       var memb = document.getElementsByClassName("select");
-      for (var i = 0; i < memb.length; i++) {
-        memb[i].classList.toggle(this.selected_class, false);
-        memb[i].classList.toggle("unframed", false);
-      }
-      if (event.currentTarget.classList.contains("colorized")) {
-        this.selected_class = "in_color";
-      }
 
-      //if
-      if (event.currentTarget.classList.contains("no_frame")) {
-        this.selected_class = "unframed";
+      //If node with select class also contains class multiple, more then one node may be selected and deselected
+      if (event.currentTarget.classList.contains("multiple")) {
+        if (
+          event.currentTarget.classList.contains(this.selected_class) == false
+        ) {
+          event.currentTarget.classList.toggle(this.selected_class, true);
+          event.currentTarget.classList.toggle("unframed", false);
+          //logger hendelser
+          this.setEventdata("select_click", event);
+        } else {
+          event.currentTarget.classList.toggle("unframed", true);
+          event.currentTarget.classList.toggle(this.selected_class, false);
+          //logger hendelser
+          this.setEventdata("de-select_click", event);
+        }
+
+        //this.selected_class =
+        //event.currentTarget.classList.toggle(event.currentTarget.classList.contains("unframed")? this.selected_class: "unframed")
       } else {
-      }
+        for (var i = 0; i < memb.length; i++) {
+          memb[i].classList.toggle(this.selected_class, false);
+          memb[i].classList.toggle("unframed", false);
+        }
+        if (event.currentTarget.classList.contains("colorized")) {
+          this.selected_class = "in_color";
+        }
 
-      event.currentTarget.classList.toggle(this.selected_class, true);
-      //logger hendelser
-      this.setEventdata("select_click", event, "" /* , widgetThis */);
+        //if
+        if (event.currentTarget.classList.contains("no_frame")) {
+          this.selected_class = "unframed";
+        } else {
+        }
+
+        event.currentTarget.classList.toggle(this.selected_class, true);
+
+        //logger hendelser
+        this.setEventdata("select_click", event);
+      }
     });
 
     //SKRIV INN TALL (brukes hvis behov for å legge til noe i et tekstfelt generert dynamisk ved klikk på noe i svg)
@@ -740,20 +762,20 @@ export default class MatteWidget {
     let event;
     Draggable.create(".source", {
       //setter bounds til å dekke alt (noe svg'er med rare startverdier)
-      bounds: {
+      /* {
         minX: -4000,
         maxX: 1024,
         minY: -4005,
         maxY: 1024,
-      },
-
+      } */
+      bounds: "#" + imid,
       onDragLeave: function () {
         //this.update();
       },
 
       onDragStart: function (e) {
         //logger hendelser
-        event = widgetThis.setEventdata("move", this, "" /* , widgetThis */);
+        event = widgetThis.setEventdata("move", this);
       },
 
       onDrag: function (evt) {
@@ -799,13 +821,23 @@ export default class MatteWidget {
                     .value
                 : "";
 
+            let targ_class = "";
+            if (widgetThis.targets.members[i].node.classList.contains("left")) {
+              targ_class = "left";
+            }
+            if (
+              widgetThis.targets.members[i].node.classList.contains("right")
+            ) {
+              targ_class = "right";
+            }
+
             //logger hendelser
             widgetThis.setEventdata(
               "hit",
               this,
               widgetThis.targets.members[i].node.id,
-              //widgetThis,
-              targ_value
+              targ_value,
+              targ_class
             );
 
             var pos = widgetThis.targets.members[i].bbox();
@@ -862,7 +894,7 @@ export default class MatteWidget {
 
   //logging pos x|y, obj, selectval, target_val, ev_type, etc
   //para ev_type, eventobj (x|y value), object, widget (for variables)
-  setEventdata(evtype, ev, hitobj, trg_val = "") {
+  setEventdata(evtype, ev, trg_id = "", trg_val = "", trg_type = "") {
     let trgobj =
       ev.currentTarget != null
         ? ev.currentTarget
@@ -874,13 +906,15 @@ export default class MatteWidget {
     const eventen = {
       x: x,
       y: y,
-      obj: trgobj.id != null ? trgobj.id : "nn",
+      src_id: trgobj.id != null ? trgobj.id : "nn",
       s_val:
         trgobj.attributes["selectvalue"] == null
           ? "nn"
           : trgobj.attributes["selectvalue"].value,
 
+      target_id: trg_id,
       target_val: trg_val,
+      target_type: trg_type,
       event: evtype,
       time: evtype != "move" ? Date.now() : [Date.now()],
       tdiff:
@@ -894,7 +928,6 @@ export default class MatteWidget {
               ]) /
             1000
           : "",
-      hit: hitobj,
     };
     this.updateAnswer(eventen);
     //.catch(e => console.warn("error when logging!"));
