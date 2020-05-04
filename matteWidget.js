@@ -1,5 +1,5 @@
-//export default class MatteWidget {
-class MatteWidget {
+export default class MatteWidget {
+  //class MatteWidget {
   constructor(divElementId, config, answer = null, onAnswer, options) {
     // DEBUG if playback
     console.log(
@@ -562,11 +562,15 @@ class MatteWidget {
           ]
         : 0;
 
-    //fetching svg top node for Tweenlite touch action
-    var imid = this.svgimage.node.id;
-    TweenLite.set("#" + imid, {
+    //fetching layer node if defined, else fetch svg top node for Tweenlite touch action
+
+    let layer_el = SVG().select(".outer_frame").members[0];
+    let imid =
+      layer_el != undefined ? layer_el.node.id : this.svgelement.node.id;
+
+    /* TweenLite.set("#" + imid, {
       touchAction: "manipulation",
-    });
+    }); */
 
     /************** */
     //CLICK/TOUCH EVENTS
@@ -762,12 +766,12 @@ class MatteWidget {
     let event;
     Draggable.create(".source", {
       //setter bounds til å dekke alt (noe svg'er med rare startverdier)
-      /* {
-        minX: -4000,
-        maxX: 1024,
-        minY: -4005,
-        maxY: 1024,
-      } */
+      /*bounds:  {
+        minX: -400,
+        maxX: 700,
+        minY: -550,
+        maxY: 250,
+      } ,*/
       bounds: "#" + imid,
       onDragLeave: function () {
         //this.update();
