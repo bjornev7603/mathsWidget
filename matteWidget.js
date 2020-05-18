@@ -89,6 +89,7 @@ export default class MatteWidget {
       this.playback = options.playback;
       this.initPlayback();
     }
+    if (this.playback == null) event = this.setEventdata("start_task");
 
     //***************************
     //Speak on page load
@@ -129,9 +130,11 @@ export default class MatteWidget {
       move: (arg) => this.replay_svg(arg),
       hit: (arg) => this.replay_svg(arg),
       select_click: (arg) => this.replay_svg(arg),
+      //de-select_click: (arg) => this.replay_svg(arg),
       next_click: (arg) => this.replay_svg(arg),
       info_click: (arg) => this.replay_svg(arg),
       timer_click: (arg) => this.replay_svg(arg),
+      start_task: (arg) => this.replay_svg(arg),
 
       //RESET: () => this.api.reset()
     };
@@ -233,7 +236,7 @@ export default class MatteWidget {
             src_el.node.setAttribute("id", "gr" + src_el.node.id);
           }
         }
-        let log_objid = lg[lg_el].obj;
+        let log_objid = lg[lg_el].src_id;
         //problem of integer start of string
         log_objid = this.is_numeric(log_objid[0])
           ? (log_objid = "gr" + log_objid)
@@ -254,12 +257,13 @@ export default class MatteWidget {
             //(some svgs have deviating posisions in transform matrix, or different group objects have the same x /y pos in matrix despite sub els have diff x / y
             //define px difference between transform matrix x/y and log x/y to get real paths)
 
-            let x_val = typeof lg === "object" ? lg[0].x : lg.x;
-            let y_val = typeof lg === "object" ? lg[0].y : lg.y;
+            lg_el = lg_el > 0 ? lg_el : 0;
+            let x_val = typeof lg === "object" ? lg[lg_el].x[0] : lg.x[0];
+            let y_val = typeof lg === "object" ? lg[lg_el].y[0] : lg.y[0];
 
             //deactivate default distortion adjustments for now
-            x_val = 0;
-            y_val = 0;
+            //x_val = 600;
+            //y_val = 600;
 
             //diff x
             if (log_objid in this.x_offset_diff == false) {
@@ -366,8 +370,10 @@ export default class MatteWidget {
 
     let logg = this.answer[arg];
     //Select specific svg node element that corresponds to log row
-    logg.obj = this.is_numeric(logg.obj[0]) ? "gr" + logg.obj : logg.obj;
-    let svg_obj = SVG().select("#" + logg.obj).members[0];
+    logg.src_id = this.is_numeric(logg.src_id[0])
+      ? "gr" + logg.src_id
+      : logg.src_id;
+    let svg_obj = SVG().select("#" + logg.src_id).members[0];
 
     switch (logg.event) {
       case "move":
@@ -382,13 +388,13 @@ export default class MatteWidget {
                     : 0;
                 let pos_x =
                   index > 0
-                    ? logg.x[index] + this.x_offset_diff[logg.obj]
-                    : this.x_offset[logg.obj];
+                    ? logg.x[index] + this.x_offset_diff[logg.src_id]
+                    : this.x_offset[logg.src_id];
 
                 let pos_y =
                   index > 0
-                    ? +(logg.y[index] + this.y_offset_diff[logg.obj])
-                    : this.y_offset[logg.obj];
+                    ? +(logg.y[index] + this.y_offset_diff[logg.src_id])
+                    : this.y_offset[logg.src_id];
 
                 let nd_mx = svg_obj.node.transform.animVal[0].matrix;
                 svg_obj.node.setAttribute(
@@ -419,9 +425,9 @@ export default class MatteWidget {
       case "hit":
         var t = logg.x * 0.94 + " " + logg.y * 0.91;
         let prefix = "";
-        prefix = this.is_numeric(logg.obj[0]) ? "#gr" : "#";
+        prefix = this.is_numeric(logg.src_id[0]) ? "#gr" : "#";
 
-        let svg_ele = SVG().select(prefix + logg.obj).members[0];
+        let svg_ele = SVG().select(prefix + logg.src_id).members[0];
         if (SVG().select(".target.eat").members.length > 0) {
           TweenLite.to(svg_ele, 0.1, {
             opacity: 0,
@@ -446,7 +452,7 @@ export default class MatteWidget {
           }
         }
 
-        let svg_sel_el = SVG().select("#" + logg.obj).members[0].node;
+        let svg_sel_el = SVG().select("#" + logg.src_id).members[0].node;
         svg_sel_el.classList.toggle(this.selected_class, true);
 
         break;
@@ -582,6 +588,14 @@ export default class MatteWidget {
       //Speak on click/touch next button
       //***************************
       //this.onAnswer(this.answer);
+
+      // Kill
+      /* if (Draggable.get(".source") != undefined) {
+        Draggable.get(".source").kill();
+      }
+      if (Draggable.get(".select") != undefined) {
+        Draggable.get(".select").kill();
+      } */
 
       //if next button is clicked, it is logged
       this.setEventdata("next_click", event);
@@ -751,7 +765,7 @@ export default class MatteWidget {
 
         event.currentTarget.classList.toggle(this.selected_class, true);
 
-        //logger hendelser
+        //logs actions
         this.setEventdata("select_click", event);
       }
     });
@@ -781,6 +795,16 @@ export default class MatteWidget {
         //logger hendelser
         event = widgetThis.setEventdata("move", this);
       },
+
+      /* onDragEnter: function (e) {
+        var i = widgetThis.targets.members.length;
+        //Ved treff av et target
+        while (--i > -1) {
+          if (this.hitTest(widgetThis.targets.members[i].node)) {
+            console.log(this);
+          }
+        }
+      }, */
 
       onDrag: function (evt) {
         var terskel = 6;
@@ -898,23 +922,29 @@ export default class MatteWidget {
 
   //logging pos x|y, obj, selectval, target_val, ev_type, etc
   //para ev_type, eventobj (x|y value), object, widget (for variables)
-  setEventdata(evtype, ev, trg_id = "", trg_val = "", trg_type = "") {
-    let trgobj =
-      ev.currentTarget != null
-        ? ev.currentTarget
-        : ev.target != null
-        ? ev.target
-        : "";
-    let [x, y] = evtype !== "move" ? [ev.x, ev.y] : [[ev.x], [ev.y]];
+  setEventdata(evtype, ev = null, trg_id = "", trg_val = "", trg_type = "") {
+    let trgobj = null;
+    if (ev !== null && ev.currentTarget != null) {
+      trgobj = ev.currentTarget;
+    }
+    if (ev != null && ev.target != null) {
+      trgobj = ev.target;
+    }
+    let x,
+      y = null;
 
+    if (ev != null) {
+      [x, y] =
+        evtype !== "move" && ev != null ? [ev.x, ev.y] : [[ev.x], [ev.y]];
+    }
     const eventen = {
       x: x,
       y: y,
-      src_id: trgobj.id != null ? trgobj.id : "nn",
+      src_id: trgobj != null && trgobj.id != null ? trgobj.id : "nn",
       s_val:
-        trgobj.attributes["selectvalue"] == null
-          ? "nn"
-          : trgobj.attributes["selectvalue"].value,
+        trgobj != null && trgobj.attributes["selectvalue"] != null
+          ? trgobj.attributes["selectvalue"].value
+          : null,
 
       target_id: trg_id,
       target_val: trg_val,
