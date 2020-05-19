@@ -825,7 +825,7 @@ export default class MatteWidget {
         counter += 1;
       });
 
-      // Create animation trigger based on class
+      // Create animation trigger based on *class*      
       const rotateElements = document.getElementsByClassName('rotate-on-click');
       [].forEach.call(rotateElements, (el) => {
         el.addEventListener('click', () => {
@@ -840,23 +840,38 @@ export default class MatteWidget {
         });
       });
 
-      // Create animation triggers based on config
+      // Create animation triggers based on *config*
       for (const animation of animations) {
         const element = document.getElementById(animation.id);
         const trigger = animation.trigger;
         document.getElementById(trigger.elementId)
           .addEventListener(trigger.action, () => {
+            // Move element to a defined point
             if (animation.type === 'slide') {
               element.style.transition=`${animation.duration}s linear`;
               element.style.transform=`translate(${animation.end.x}px, ${animation.end.y}px)`;
+            } else if (animation.type === 'slide-between-elements') {
+              // Move source element between elements in path
+              const sourceElement = document.querySelector(`#${animation.id}`)                  
+              const sourceElementBox = sourceElement.getBoundingClientRect();
+              animation.path.forEach((pathElement, idx) => {
+                setTimeout(() => {
+                  const pathElementBox = document.querySelector(`#${pathElement.elementId}`).getBoundingClientRect();
+                  const newX = pathElementBox.x - sourceElementBox.x;
+                  const newY = pathElementBox.y - sourceElementBox.y;
+                  
+                  sourceElement.style.transition = `${animation.duration_move/1000}s linear`;
+                  sourceElement.style.transform = `translate(${newX}px, ${newY}px)`;
+                }, idx === 0 ? 0 : idx * (animation.duration_move + animation.duration_stop));
+              });
             }
           });
       }
 
-      // Move hand to one of the footballs on click
+      // Move hand to the first football, then the second, on click
       document.querySelector('#pointing-hand').addEventListener('click', (el) => {
-        const football1El = document.querySelector('#g20137');        
-        const football1Box = football1El.getBoundingClientRect();        
+        const football1El = document.querySelector('#g20137');
+        const football1Box = football1El.getBoundingClientRect();
         const sourceBox = el.srcElement.getBoundingClientRect();
         
         const firstX = football1Box.x - sourceBox.x;
