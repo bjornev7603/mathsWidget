@@ -130,6 +130,8 @@ export default class MatteWidget {
       }
     }
 
+    this.createAnimations();
+
     this.runscript()
   }
 
@@ -770,6 +772,113 @@ export default class MatteWidget {
     } else {
       return num_in_url
     }
+  }
+
+  createAnimations = () => {    
+    const animations = this.config?.animations;
+    if (typeof animations === 'undefined') {
+      return;
+    }
+
+    let counter = 1;
+    let counter2 = 1;
+    let counter3 = 1;
+
+    // Wait for scene to be ready
+    setTimeout(() => {
+      console.log('time to create some animations');
+      
+      // Complete lottie demo scene
+      const anim2 = lottie.loadAnimation({
+        container: document.getElementById('lottie-container2'),
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path: 'lottie-files/data.json',
+      });      
+      
+      document.getElementById('lottie-trigger').addEventListener('click', () => {
+        if (counter2 % 2 === 0) {
+          anim2.pause();
+        } else {
+          anim2.play();
+        }
+        counter2 += 1;
+      });
+
+      const animation = lottie.loadAnimation({
+        container: document.getElementById('lottie-container'),
+        renderer: 'svg',
+        loop: true,
+        autoplay: false,
+        path: 'lottie-files/dog_internal2.json',
+      });
+      
+      // Toggle play/pause of Lottie animation
+      document.getElementById('g11864-5').addEventListener('click', () => {
+        animation.setSpeed(4);      
+        if (counter % 2 === 0) {
+          animation.pause();
+        } else {
+          animation.play();
+        }
+        counter += 1;
+      });
+
+      // Create animation trigger based on class
+      const rotateElements = document.getElementsByClassName('rotate-on-click');
+      [].forEach.call(rotateElements, (el) => {
+        el.addEventListener('click', () => {
+          console.log(el);
+          el.style.transition=`1s linear`;
+          if (counter3 % 2 === 1) {
+            el.style.transform='rotate(360deg)';
+          } else {
+            el.style.transform='rotate(0)';
+          }
+          counter3 += 1;
+        });
+      });
+
+      // Create animation triggers based on config
+      for (const animation of animations) {
+        const element = document.getElementById(animation.id);
+        const trigger = animation.trigger;
+        document.getElementById(trigger.elementId)
+          .addEventListener(trigger.action, () => {
+            if (animation.type === 'slide') {
+              element.style.transition=`${animation.duration}s linear`;
+              element.style.transform=`translate(${animation.end.x}px, ${animation.end.y}px)`;
+            }
+          });
+      }
+
+      // Move hand to one of the footballs on click
+      document.querySelector('#pointing-hand').addEventListener('click', (el) => {
+        const football1El = document.querySelector('#g20137');        
+        const football1Box = football1El.getBoundingClientRect();        
+        const sourceBox = el.srcElement.getBoundingClientRect();
+        
+        const firstX = football1Box.x - sourceBox.x;
+        const firstY = football1Box.y - sourceBox.y;        
+
+        el.srcElement.style.transition = '1s linear';
+        el.srcElement.style.transform = `translate(${firstX}px, ${firstY}px)`;
+
+        setTimeout(() => {
+          const football2El = document.querySelector('#g20137-8');
+          const football2Box = football2El.getBoundingClientRect();
+          const secondX = football2Box.x - sourceBox.x;
+          const secondY = football2Box.y - sourceBox.y;
+
+          el.srcElement.style.transition = '1s linear';
+          el.srcElement.style.transform = `translate(${secondX}px, ${secondY}px)`;
+        }, 1500);
+        
+      });
+
+    }, 1000);
+
   }
 }
 

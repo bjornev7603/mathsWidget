@@ -4,5 +4,33 @@
   "viewBox": {
     "x": 1024,
     "y": 768
-  }
+  },
+  "animations": [
+    {
+      "id": "lottie-container",
+      "type": "slide",
+      "duration": 1.5,    
+      "trigger": {
+        "elementId": "g11864-5",
+        "action": "click"
+      },
+      "end": {
+        "x": 320,
+        "y": 310
+      }      
+    },
+    {
+      "id": "pointing-hand",
+      "type": "slide",
+      "duration": 2,    
+      "trigger": {
+        "elementId": "g11864-5",
+        "action": "click"
+      },
+      "end": {
+        "x": 620,
+        "y": 0
+      }
+    }
+  ]
 }

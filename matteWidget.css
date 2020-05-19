@@ -7,6 +7,11 @@
   top: 0px;
   left: 0px;
 }
+
+#widget-container {
+  position: relative;
+}
+
 .select {
   cursor: pointer;
 }
@@ -141,3 +146,85 @@ body {
   background-color: #f39c12;
   color: #eeeeee;
 }
+
+#lottie-container {
+  position: absolute;
+  width: 40%;
+}
+
+#pointing-hand {
+  width: 120px;
+  position: absolute;
+  left: 12vw;
+  top: 500px;
+}
+
+.rotation {
+  animation: rotation 2s infinite linear;
+}
+
+@keyframes rotation
+{
+  from { transform: rotate(0deg); }
+  to { transform: rotate(359deg); }
+}
+
+
+.gif-money {
+  position: absolute;
+  top: 35%;
+  left: 35%;
+  /*transform: scale(0.3);*/
+  /*-webkit-animation: slide-money 10s linear infinite;
+  -moz-animation: slide-money 10s linear infinite;
+  animation: slide-money 10s linear infinite;*/
+}
+
+.gif-alien {
+  position: absolute;
+  top: 40%;
+  left: 0%;
+  /*transform: scale(0.3);*/
+  /*-webkit-animation: slide-alien 10s linear infinite;
+  -moz-animation: slide-alien 10s linear infinite;
+  animation: slide-alien 10s linear infinite;*/
+}
+
+@-webkit-keyframes slide-money
+{
+  0% { left: 20%; top: 60%; }
+  100% { left: 80%; top: -20%; }
+}
+
+@-moz-keyframes slide-money
+{
+  0% { left: 20%; top: 60%; }
+  100% { left: 80%; top: -20%; }
+}
+
+@keyframes slide-money
+{
+  0% { left: 20%; top: 60%; }
+  100% { left: 80%; top: -20%; }
+}
+
+@-webkit-keyframes slide-alien
+{
+  0%   {top: 20%;}
+  50% {top: 60%;}
+  100% {top: 20%;}
+}​
+
+@-moz-keyframes slide-alien
+{
+  0%   {top: 20%;}
+  50% {top: 60%;}
+  100% {top: 20%;}
+}​
+
+@keyframes slide-alien
+{
+  0%   {top: 20%;}
+  50% {top: 60%;}
+  100% {top: 20%;}
+}​
