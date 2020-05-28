@@ -9,7 +9,7 @@
     {
       "id": "lottie-container",
       "type": "slide",
-      "duration": 1.5,    
+      "duration": 1.5,
       "trigger": {
         "elementId": "g11864-5",
         "action": "click"
@@ -34,11 +34,19 @@
     },
     {
       "id": "pointing-hand",
+      "type": "rotate",
+      "trigger": {
+        "elementId": "pointing-hand",
+        "action": "click"
+      }
+    },
+    {
+      "id": "lottie-container",
       "type": "slide-between-elements",
       "duration_move": 1000,
       "duration_stop": 500,
       "trigger": {
-        "elementId": "pointing-hand",
+        "elementId": "lottie-container",
         "action": "click"
       },
       "path": [
@@ -48,6 +56,13 @@
         {"elementId": "g20137-6"},
         {"elementId": "g20137-4"}
       ]
+    },
+    {
+      "id": "g11864-5",
+      "type": "lottie",
+      "file_path": "lottie-files/dog_internal2.json",
+      "loop": true,
+      "autoplay": true
     }
   ]
 }

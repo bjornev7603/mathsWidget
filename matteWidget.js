@@ -810,11 +810,12 @@ export default class MatteWidget {
         container: document.getElementById('lottie-container'),
         renderer: 'svg',
         loop: true,
-        autoplay: false,
+        autoplay: true,
         path: 'lottie-files/dog_internal2.json',
       });
       
       // Toggle play/pause of Lottie animation
+      /*
       document.getElementById('g11864-5').addEventListener('click', () => {
         animation.setSpeed(4);      
         if (counter % 2 === 0) {
@@ -824,8 +825,10 @@ export default class MatteWidget {
         }
         counter += 1;
       });
+      */
 
-      // Create animation trigger based on *class*      
+      // Create rotation animation trigger based on *class*
+      /*    
       const rotateElements = document.getElementsByClassName('rotate-on-click');
       [].forEach.call(rotateElements, (el) => {
         el.addEventListener('click', () => {
@@ -839,17 +842,38 @@ export default class MatteWidget {
           counter3 += 1;
         });
       });
+      */
+
+      /* Move all football into the goal */
+      const footballElements = document.getElementsByClassName('source');
+      [].forEach.call(footballElements, (el) => {
+        el.addEventListener('click', () => {
+          const targetElement = document.getElementsByClassName('target')[0];
+          const targetBox = targetElement.getBoundingClientRect();
+          
+          const sourceBox = el.getBoundingClientRect();
+          const newX = targetBox.x - sourceBox.x;
+          const newY = targetBox.y - sourceBox.y;
+          
+          console.log('x: ' + newX + 'y: ' + newY);
+          el.style.transition='1s linear';
+          el.style.transform=`translate(${newX}px, ${newY}px)`;
+        });
+      });
 
       // Create animation triggers based on *config*
       for (const animation of animations) {
         const element = document.getElementById(animation.id);
         const trigger = animation.trigger;
-        document.getElementById(trigger.elementId)
-          .addEventListener(trigger.action, () => {
+        if (animation.trigger) {
+          document.getElementById(trigger.elementId).addEventListener(trigger.action, () => {
             // Move element to a defined point
             if (animation.type === 'slide') {
               element.style.transition=`${animation.duration}s linear`;
               element.style.transform=`translate(${animation.end.x}px, ${animation.end.y}px)`;
+            } else if (animation.type === 'rotate') {              
+              element.style.transition=`1s linear`;
+              element.style.transform='rotate(360deg)';
             } else if (animation.type === 'slide-between-elements') {
               // Move source element between elements in path
               const sourceElement = document.querySelector(`#${animation.id}`)                  
@@ -866,9 +890,22 @@ export default class MatteWidget {
               });
             }
           });
+        }
+
+        /* Add any Lottie animations from config to the scene */
+        if (animation.type === 'lottie') {
+          lottie.loadAnimation({
+            container: document.getElementById(animation.id),
+            renderer: 'svg',
+            loop: animation.loop || true,
+            autoplay: animation.autoplay || true,
+            path: animation.file_path,
+          });
+        }  
       }
 
       // Move hand to the first football, then the second, on click
+      /*
       document.querySelector('#pointing-hand').addEventListener('click', (el) => {
         const football1El = document.querySelector('#g20137');
         const football1Box = football1El.getBoundingClientRect();
@@ -891,6 +928,7 @@ export default class MatteWidget {
         }, 1500);
         
       });
+      */
 
     }, 1000);
 
