@@ -34,6 +34,8 @@ export default class MatteWidget {
     this.audioEl = new Audio();
     this.timerInvoked = false; //brukes for å anslå om allerede trykket på timer-objekt
 
+    this.svgfilename = null;
+
     //get svg from upload file and save this to window.name,
     //otherwise fetch uploaded svg object stored i window.name
     if (options && options.svg != null && options.svg != false) {
@@ -89,7 +91,6 @@ export default class MatteWidget {
       this.playback = options.playback;
       this.initPlayback();
     }
-    if (this.playback == null) event = this.setEventdata("start_task");
 
     //***************************
     //Speak on page load
@@ -118,6 +119,17 @@ export default class MatteWidget {
       this.parseSVG(this.svg);
       this.runscript();
     }
+
+    this.svgfilename = SVG.select(".outer_frame").members
+      ? SVG.select(".outer_frame").members[0].node.getAttribute(
+          "sodipodi:docname"
+        )
+      : "task666";
+    this.tasktype = SVG.select(".outer_frame").members[0].node.getAttribute(
+      "tasktype"
+    );
+
+    if (this.playback == null) event = this.setEventdata("start_task");
 
     //SVG event handlers
   }
@@ -938,6 +950,8 @@ export default class MatteWidget {
         evtype !== "move" && ev != null ? [ev.x, ev.y] : [[ev.x], [ev.y]];
     }
     const eventen = {
+      svgfile: this.svgfilename,
+      task_type: this.tasktype,
       x: x,
       y: y,
       src_id: trgobj != null && trgobj.id != null ? trgobj.id : "nn",
@@ -946,6 +960,10 @@ export default class MatteWidget {
           ? trgobj.attributes["selectvalue"].value
           : null,
 
+      sel_points:
+        trgobj != null && trgobj.attributes["selectvalue"] != null
+          ? trgobj.attributes["point"].value
+          : null,
       target_id: trg_id,
       target_val: trg_val,
       target_type: trg_type,

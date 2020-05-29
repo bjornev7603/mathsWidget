@@ -1,5 +1,8 @@
 import Widget from "./matteWidget.js";
 
+//import Report from "./makeReport.js";
+import makeReport from "./makeReport.js";
+
 const configFile = "configA.json";
 let currentConfig;
 // const configFile = 'configB.json'
@@ -7,16 +10,51 @@ let currentConfig;
 const divContainer = document.getElementById("widget-container");
 const fileUpload = document.getElementById("config-file");
 const setAns = document.getElementById("set-ans");
+const testReport = document.getElementById("test-report");
 const playback = document.getElementById("playback");
 const fileJsonUpload = document.getElementById("json-log-file");
 const SVGUpload = document.getElementById("svgfile");
+const answerJsons = document.getElementById("answerJsons");
 
 let svg;
 
-fileUpload.onchange = inn => {
+answerJsons.onchange = (inn) => {
+  let jsonstreng = "";
+  let chosen_files = inn.currentTarget.files;
+
+  const promise1 = new Promise((resolve, reject) => {
+    for (var i = 0; i < chosen_files.length; i++) {
+      (function (f, i) {
+        var filereader = new FileReader();
+
+        filereader.onloadend = function (e) {
+          //console.log("filereader.onloaded: File: " + f.name + " index:" + i);
+          jsonstreng +=
+            e.currentTarget.result
+              .trim()
+              .slice(1, -1)
+              .replace(
+                /"tdiff": ""|"tdiff": null/g,
+                '"a_file": "' + chosen_files[i].name + '"'
+              ) + ",";
+          if (i == chosen_files.length - 1) {
+            resolve(jsonstreng);
+          }
+        };
+        filereader.readAsText(f);
+      })(chosen_files[i], i);
+    }
+  });
+
+  promise1.then((value) => {
+    let rep = new makeReport(value);
+  });
+};
+
+fileUpload.onchange = (inn) => {
   let file = fileUpload.files[0];
   let fr = new FileReader();
-  fr.onload = evt => {
+  fr.onload = (evt) => {
     let config = JSON.parse(evt.target.result);
     currentConfig = config;
     makeWidget(config, null, false);
@@ -31,6 +69,12 @@ setAns.onclick = () => {
   if (ans.log.length > 0) makeWidget(currentConfig, ans.log, null);
 };
 
+/* testReport.onclick = () => {
+  console.log("Making excel report from matistikk answer Json files");
+  //if (ans.log.length > 0) makeWidget(currentConfig, ans.log, null);
+  window.widget = new makeReport();
+}; */
+
 playback.onclick = () => {
   console.log("PLAYBACK");
   makeWidget(currentConfig, ans.log, true);
@@ -38,11 +82,11 @@ playback.onclick = () => {
 
 //let answerEl = document.getElementById("answer");
 
-fileJsonUpload.onchange = inn => {
+fileJsonUpload.onchange = (inn) => {
   console.log("Getting log data from json");
   let file = fileJsonUpload.files[0];
   let fr = new FileReader();
-  fr.onload = evt => {
+  fr.onload = (evt) => {
     let jsonobj = JSON.parse(evt.target.result);
     let logdata_json = jsonobj;
     console.log(logdata_json);
@@ -51,11 +95,11 @@ fileJsonUpload.onchange = inn => {
   fr.readAsText(file);
 };
 
-SVGUpload.onchange = inn => {
+SVGUpload.onchange = (inn) => {
   console.log("Getting uploaded svg file");
   let file = SVGUpload.files[0];
   let fr = new FileReader();
-  fr.onload = evt => {
+  fr.onload = (evt) => {
     //let svgobj = JSON.parse(evt.target.result);
     svg = evt.target.result;
     console.log("loading svg file");
@@ -66,7 +110,7 @@ SVGUpload.onchange = inn => {
 
 //Onanswer is callback
 //Answer is previous
-let onAnswer = answer => {
+let onAnswer = (answer) => {
   ans.log = answer != null ? answer : [];
   //console.log(answer);
 };
@@ -76,8 +120,8 @@ let onAnswer = answer => {
   .then(config => makeWidget(config, null, false)); */
 
 fetch(`./configs/${configFile}`)
-  .then(resp => resp.json())
-  .then(config => {
+  .then((resp) => resp.json())
+  .then((config) => {
     currentConfig = config;
     makeWidget(config);
   });
@@ -95,16 +139,12 @@ function makeWidget(
   //answerEl.value = "";
   delete window.widget;
   let divEl = document.createElement("div");
-  divEl.id =
-    "widget" +
-    Math.random()
-      .toString(36)
-      .substring(2, 15);
+  divEl.id = "widget" + Math.random().toString(36).substring(2, 15);
   divContainer.append(divEl);
   window.widget = new Widget(divEl.id, config, answer, onAnswer, {
     playback: playback,
     svg: svg,
-    filename: filename
+    filename: filename,
   });
 }
 

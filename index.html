@@ -17,6 +17,68 @@
       integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
       crossorigin="anonymous"
     ></script>
+    <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+
+    <script src="https://www.igniteui.com/js/external/FileSaver.js"></script>
+    <script src="https://www.igniteui.com/js/external/Blob.js"></script>
+
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/infragistics.core.js"
+    ></script>
+
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.ext_core.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.ext_collections.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.ext_text.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.ext_io.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.ext_ui.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.documents.core_core.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.ext_collectionsextended.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.excel_core.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.ext_threading.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.ext_web.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.xml.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.documents.core_openxml.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="http://cdn-na.infragistics.com/igniteui/2019.2/latest/js/modules/infragistics.excel_serialization_openxml.js"
+    ></script>
 
     <link
       href="https://cdn.materialdesignicons.com/4.7.95/css/materialdesignicons.min.css"
@@ -151,7 +213,7 @@
                 width="20px"
                 height="20px"
                 viewBox="0 0 314.998 314.998"
-                style="enable-background:new 0 0 314.998 314.998;"
+                style="enable-background: new 0 0 314.998 314.998;"
               >
                 <g transform="translate(0 -562.36)">
                   <polygon
@@ -169,6 +231,18 @@
                 Playback
               </span>
             </div>
+          </div>
+
+          <div class="box">
+            <input
+              type="file"
+              name="answerJsons"
+              multiple="true"
+              id="answerJsons"
+            />
+            <br />
+
+            <pre id="output"></pre>
           </div>
         </div>
       </div>
