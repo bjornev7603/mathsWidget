@@ -125,9 +125,20 @@ export default class MatteWidget {
           "sodipodi:docname"
         )
       : "task666";
-    this.tasktype = SVG.select(".outer_frame").members[0].node.getAttribute(
-      "tasktype"
-    );
+    this.tasktype =
+      SVG.select(".outer_frame").members[0].node.getAttribute("tasktype") !=
+      undefined
+        ? SVG.select(".outer_frame").members[0].node.getAttribute("tasktype")
+        : "";
+
+    this.num_targs_to_hit =
+      SVG.select(".outer_frame").members[0].node.getAttribute(
+        "num_targs_to_hit"
+      ) != undefined
+        ? SVG.select(".outer_frame").members[0].node.getAttribute(
+            "num_targs_to_hit"
+          )
+        : "";
 
     if (this.playback == null) event = this.setEventdata("start_task");
 
@@ -583,6 +594,7 @@ export default class MatteWidget {
     //fetching layer node if defined, else fetch svg top node for Tweenlite touch action
 
     let layer_el = SVG().select(".outer_frame").members[0];
+    let layer_box = SVG().select(".box").members[0];
     let imid =
       layer_el != undefined ? layer_el.node.id : this.svgelement.node.id;
 
@@ -939,7 +951,7 @@ export default class MatteWidget {
     if (ev !== null && ev.currentTarget != null) {
       trgobj = ev.currentTarget;
     }
-    if (ev != null && ev.target != null) {
+    if (ev != null && ev.target != null && trgobj == null) {
       trgobj = ev.target;
     }
     let x,
@@ -961,25 +973,16 @@ export default class MatteWidget {
           : null,
 
       sel_points:
-        trgobj != null && trgobj.attributes["selectvalue"] != null
+        trgobj != null && trgobj.attributes["point"] != null
           ? trgobj.attributes["point"].value
           : null,
       target_id: trg_id,
       target_val: trg_val,
       target_type: trg_type,
       event: evtype,
+      num_targs_to_hit: this.num_targs_to_hit,
       time: evtype != "move" ? Date.now() : [Date.now()],
-      tdiff:
-        evtype != "move" &&
-        this.answer != null &&
-        this.answer[this.answer.length - 1] &&
-        this.answer[this.answer.length - 1].time != null
-          ? (Date.now() -
-              this.answer[this.answer.length - 1].time[
-                this.answer[this.answer.length - 1].time.length - 1
-              ]) /
-            1000
-          : "",
+      tdiff: "",
     };
     this.updateAnswer(eventen);
     //.catch(e => console.warn("error when logging!"));

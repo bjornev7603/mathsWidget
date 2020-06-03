@@ -34,7 +34,7 @@ answerJsons.onchange = (inn) => {
               .trim()
               .slice(1, -1)
               .replace(
-                /"tdiff": ""|"tdiff": null/g,
+                /"tdiff": ""|"tdiff": null|"tdiff": "NaN"/g,
                 '"a_file": "' + chosen_files[i].name + '"'
               ) + ",";
           if (i == chosen_files.length - 1) {
