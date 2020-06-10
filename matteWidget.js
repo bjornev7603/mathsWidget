@@ -11,7 +11,7 @@ export default class MatteWidget {
     // DEBUG if svg
     console.log(
       options && options.svg
-        ? "Loaded svg from Main(test framework) at folk.ntnu.no"
+        ? "Loaded svg from Main(test framework)"
         : "Widget loaded svg normally, without passing svg object in options"
     );
 
@@ -68,6 +68,8 @@ export default class MatteWidget {
     this.init_mx_c = [];
     this.init_mx_d = [];
 
+    this.currTrg = null;
+
     customNav.init();
     document.getElementById(this.divElementId).classList.add("matte-widget");
     this.divContainer = document.getElementById("widget-container");
@@ -92,17 +94,7 @@ export default class MatteWidget {
       this.initPlayback();
     }
 
-    //***************************
-    //Speak on page load
-    //***************************
-    let loc =
-      document.location.href.includes(":55") == false
-        ? document.location.href
-        : "";
-    this.audioEl.src =
-      loc + this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
-    this.audioEl.play().catch((e) => console.warn(e));
-
+    //
     if (this.svg == null || this.svg == 1) {
       fetch(this.svg == null ? this.config.svgUrl : this.svg, {
         method: "GET",
@@ -113,12 +105,20 @@ export default class MatteWidget {
           this.parseSVG(svgl);
         })
         .then((pm) => {
+          this.getSVGinfo();
           this.runscript();
         });
     } else {
       this.parseSVG(this.svg);
+      this.getSVGinfo();
       this.runscript();
     }
+
+    //SVG event handlers
+  }
+
+  getSVGinfo() {
+    if (this.playback == null) event = this.setEventdata("start_task");
 
     this.svgfilename = SVG.select(".outer_frame").members
       ? SVG.select(".outer_frame").members[0].node.getAttribute(
@@ -140,9 +140,30 @@ export default class MatteWidget {
           )
         : "";
 
-    if (this.playback == null) event = this.setEventdata("start_task");
+    //***************************
+    //Speak on page load
+    //***************************
 
-    //SVG event handlers
+    let loc =
+      document.location.href.includes(":55") == false
+        ? document.location.href
+        : "";
+    this.audioEl.src =
+      /* loc + */ this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
+
+    this.audioEl.play().catch((e) => {
+      console.warn(e);
+    });
+
+    //Etter noen sekund blir nestepil synlig
+    let mintimer = setTimeout(function () {
+      let next = SVG.select(".next").members[0].node;
+      if (next != null) {
+        next.classList.toggle("next_activated", true);
+        next.classList.toggle("next", false);
+      }
+      clearTimeout(mintimer);
+    }, 3000);
   }
 
   // Initialize playback
@@ -564,6 +585,22 @@ export default class MatteWidget {
     );
   }
 
+  speak(current_target = null) {
+    //selve lydfilnavnet
+
+    //if speak selected number, no file num needed
+    let filenum = current_target.classList.contains("select")
+      ? ""
+      : this.getFileNumstr();
+
+    this.audioEl.src =
+      this.config.mp3BaseUrl +
+      filenum +
+      this.getSelstr(current_target) + //hvis flervalg (select), hentes evt verdi som skal tales
+      ".m4a";
+    this.audioEl.play().catch((e) => console.warn(e));
+  }
+
   runscript() {
     // HANDLER overview:
     // runscript(
@@ -725,27 +762,85 @@ export default class MatteWidget {
       //Snakker ved trykk ekorn eller på flervalg(select)element
       //*************************************
 
-      if (!event.currentTarget.classList.contains("next")) {
-        //snakk på nesteknapp allerede håndtert i onNext
+      //if (!event.currentTarget.classList.contains("next")) {
+      //snakk på nesteknapp allerede håndtert i onNext
 
-        //if click on e.g. info star, this is logged
-        if (event.currentTarget.classList.contains("info")) {
-          this.setEventdata("info_click", event);
-        }
-
-        //if speak selected number, no file num needed
-        let filenum = event.currentTarget.classList.contains("select")
-          ? ""
-          : this.getFileNumstr();
-
-        //selve lydfilnavnet
-        this.audioEl.src =
-          this.config.mp3BaseUrl +
-          filenum +
-          this.getSelstr(event.currentTarget) + //hvis flervalg (select), hentes evt verdi som skal tales
-          ".m4a";
-        this.audioEl.play().catch((e) => console.warn(e));
+      //if click on e.g. info star, this is logged
+      if (event.currentTarget.classList.contains("info")) {
+        this.setEventdata("info_click", event);
       }
+      widgetThis.speak(event.currentTarget);
+    });
+
+    SVG.select(".show_before_speak").on("click", (event) => {
+      //if (event.currentTarget.classList.contains("show_before_speak")) {
+      let balls = SVG.select(".ball_hidden").members;
+      if (balls != null) {
+        for (var i = 0; i < balls.length; i++) {
+          balls[i].node.classList.toggle("ball_visible", true);
+          balls[i].node.classList.toggle("ball_hidden", false);
+        }
+      }
+      widgetThis.currTrg = event.currentTarget;
+
+      //Balls visible for x seconds
+      let mintimer = setTimeout(function (ct = widgetThis.currTrg) {
+        let balls = SVG.select(".ball_visible").members;
+        if (balls != null) {
+          for (var i = 0; i < balls.length; i++) {
+            balls[i].node.classList.toggle("ball_hidden", true);
+            balls[i].node.classList.toggle("ball_visible", false);
+          }
+          widgetThis.speak(ct);
+        }
+        clearTimeout(mintimer);
+      }, 1300);
+      //}
+
+      //}
+    });
+
+    SVG.select(".show_before_speak_v2").on("click", (event) => {
+      widgetThis.speak(event.currentTarget);
+
+      let balls = SVG.select(".ball_hidden").members;
+      if (balls != null) {
+        for (var i = 0; i < balls.length; i++) {
+          if (balls[i].node.classList.contains("first_appear")) {
+            balls[i].node.classList.toggle("ball_visible", true);
+            balls[i].node.classList.toggle("ball_hidden", false);
+          }
+        }
+      }
+      widgetThis.currTrg = event.currentTarget;
+
+      //Balls visible for x seconds
+      let mintimer = setTimeout(function (ct = widgetThis.currTrg) {
+        let balls = SVG.select(".ball_hidden").members;
+        if (balls != null) {
+          for (var i = 0; i < balls.length; i++) {
+            //if (balls[i].node.classList.contains("later_appear")) {
+            balls[i].node.classList.toggle("ball_visible", true);
+            balls[i].node.classList.toggle("ball_hidden", false);
+            //}
+          }
+        }
+        clearTimeout(mintimer);
+      }, 1800);
+
+      //Balls visible for x seconds
+      let mintimer2 = setTimeout(function (ct = widgetThis.currTrg) {
+        let balls = SVG.select(".ball_visible").members;
+        if (balls != null) {
+          for (var i = 0; i < balls.length; i++) {
+            balls[i].node.classList.toggle("ball_hidden", true);
+            balls[i].node.classList.toggle("ball_visible", false);
+          }
+        }
+        clearTimeout(mintimer2);
+      }, 3600);
+
+      //then x sec and everything disapprea
     });
 
     //******************************************************* */
@@ -859,7 +954,8 @@ export default class MatteWidget {
         var i = widgetThis.targets.members.length;
         //Ved treff av et target
         while (--i > -1) {
-          if (this.hitTest(widgetThis.targets.members[i].node)) {
+          let trg_node = widgetThis.targets.members[i].node;
+          if (this.hitTest(trg_node)) {
             //skriver info om posisjon, tidspkt og target_id for treff av target
             let selval =
               this.target.attributes["selectvalue"] != null
@@ -867,19 +963,15 @@ export default class MatteWidget {
                 : "";
 
             let targ_value =
-              widgetThis.targets.members[i].node.attributes["targetvalue"] !=
-              null
-                ? widgetThis.targets.members[i].node.attributes["targetvalue"]
-                    .value
+              trg_node.attributes["targetvalue"] != null
+                ? trg_node.attributes["targetvalue"].value
                 : "";
 
             let targ_class = "";
-            if (widgetThis.targets.members[i].node.classList.contains("left")) {
+            if (trg_node.classList.contains("left")) {
               targ_class = "left";
             }
-            if (
-              widgetThis.targets.members[i].node.classList.contains("right")
-            ) {
+            if (trg_node.classList.contains("right")) {
               targ_class = "right";
             }
 
@@ -887,7 +979,7 @@ export default class MatteWidget {
             widgetThis.setEventdata(
               "hit",
               this,
-              widgetThis.targets.members[i].node.id,
+              trg_node.id,
               targ_value,
               targ_class
             );
@@ -909,28 +1001,36 @@ export default class MatteWidget {
               });
             }
 
-            let sources = SVG.select(".source").members;
+            //frame around target if hit
+            if (trg_node.classList.contains("illustrate")) {
+              trg_node.classList.toggle("framed", true);
+              trg_node.classList.toggle("target", false);
+            }
+
+            /* let sources = SVG.select(".source").members;
             for (var xx = 0; xx < sources.length; xx++) {
               //if (sources[i].node.id != this.target.id) {
               if (sources[xx].node.classList.contains("all_disappear")) {
                 sources[xx].node.classList.toggle("sources_disappear", true);
                 sources[xx].node.classList.toggle("source", false);
               }
-            }
+            } */
 
             //***************************
             //Speak on target hit
             //***************************
-            if (
-              widgetThis.targets.members[i].node.classList.contains(
-                "speak_when_hit"
-              )
-            ) {
+            if (trg_node.classList.contains("speak_when_hit")) {
               widgetThis.audioEl.src =
                 widgetThis.config.mp3BaseUrl +
                 widgetThis.getFileNumstr() +
                 "hit.m4a";
               widgetThis.audioEl.play().catch((e) => console.warn(e));
+            }
+          } else {
+            //frame around target if hit
+            if (trg_node.classList.contains("illustrate")) {
+              trg_node.classList.toggle("framed", false);
+              trg_node.classList.toggle("target", true);
             }
           }
         }

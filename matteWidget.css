@@ -42,6 +42,13 @@
   fill: blue;
 }
 
+/* *, *::after, *::before {
+	-webkit-user-select: none;
+	-webkit-user-drag: none;
+	-webkit-app-region: no-drag;
+	cursor: default;
+} */
+
 .sources_disappear {
   visibility: hidden;
 }
@@ -51,8 +58,31 @@
   color: blue;
 }
 
+.target {
+  /* background-color: yellow; */
+  /* padding: 0px 0px 50px 50px; */
+  /* outline: 3px solid blueviolet;
+  background-color: #f6776661;
+
+  z-index: 999; */
+}
+
 .tap {
   padding: 0px 0px 50px 50px;
+}
+
+.ball_hidden {
+  visibility: hidden;
+}
+.ball_visible {
+  visibility: visible;
+}
+
+.next {
+  visibility: hidden;
+}
+.next_activated {
+  visibility: visible;
 }
 
 .re-appear {
