@@ -45,7 +45,7 @@ export default class makeReport {
           if (
             event.task_type == "single_choice" ||
             event.task_type == "multi_choice" ||
-            event.task_type == "single_choice_firsthit" ||
+            event.task_type == "single_choice_hit" ||
             event.task_type == "ordinal" ||
             event.task_type == "quantity"
           ) {
@@ -63,7 +63,7 @@ export default class makeReport {
               sel_el = event.s_val;
               sel_acc_points += sel_points;
               sel_acc_els[event.src_id] = sel_el;
-              if (event.task_type == "single_choice_firsthit") {
+              if (event.task_type == "single_choice_hit") {
                 if (sel_el == event.target_val) {
                   sel_points_hit = 1;
                 } else sel_points_hit = 0;
@@ -102,7 +102,7 @@ export default class makeReport {
               }
               //remove element from sel_acc_els[src_id]
             }
-            if (event.event == "move") {
+            if (event.event == "not_hit") {
               if (hit_els[event.src_id] != null) {
                 delete hit_els[event.src_id];
                 ball_count--;

@@ -173,6 +173,7 @@ export default class MatteWidget {
     this.eventHandlers = {
       move: (arg) => this.replay_svg(arg),
       hit: (arg) => this.replay_svg(arg),
+      not_hit: (arg) => this.replay_svg(arg),
       select_click: (arg) => this.replay_svg(arg),
       //de-select_click: (arg) => this.replay_svg(arg),
       next_click: (arg) => this.replay_svg(arg),
@@ -1027,11 +1028,12 @@ export default class MatteWidget {
               widgetThis.audioEl.play().catch((e) => console.warn(e));
             }
           } else {
-            //frame around target if hit
+            //remove frame around target if moved away
             if (trg_node.classList.contains("illustrate")) {
               trg_node.classList.toggle("framed", false);
               trg_node.classList.toggle("target", true);
             }
+            event = widgetThis.setEventdata("not_hit", this);
           }
         }
       },
