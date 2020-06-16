@@ -822,46 +822,51 @@ export default class MatteWidget {
     });
 
     SVG.select(".show_before_speak_v2").on("click", (event) => {
-      widgetThis.speak(event.currentTarget);
+      if (
+        this.instruction_already_spoken == false &&
+        this.skip_auto_instruct == "true"
+      ) {
+        widgetThis.speak(event.currentTarget);
 
-      let balls = SVG.select(".ball_hidden").members;
-      if (balls != null) {
-        for (var i = 0; i < balls.length; i++) {
-          if (balls[i].node.classList.contains("first_appear")) {
-            balls[i].node.classList.toggle("ball_visible", true);
-            balls[i].node.classList.toggle("ball_hidden", false);
-          }
-        }
-      }
-      widgetThis.currTrg = event.currentTarget;
-
-      //Balls visible for x seconds
-      let mintimer = setTimeout(function (ct = widgetThis.currTrg) {
         let balls = SVG.select(".ball_hidden").members;
         if (balls != null) {
           for (var i = 0; i < balls.length; i++) {
-            //if (balls[i].node.classList.contains("later_appear")) {
-            balls[i].node.classList.toggle("ball_visible", true);
-            balls[i].node.classList.toggle("ball_hidden", false);
-            //}
+            if (balls[i].node.classList.contains("first_appear")) {
+              balls[i].node.classList.toggle("ball_visible", true);
+              balls[i].node.classList.toggle("ball_hidden", false);
+            }
           }
         }
-        clearTimeout(mintimer);
-      }, 1800);
+        widgetThis.currTrg = event.currentTarget;
 
-      //Balls visible for x seconds
-      let mintimer2 = setTimeout(function (ct = widgetThis.currTrg) {
-        let balls = SVG.select(".ball_visible").members;
-        if (balls != null) {
-          for (var i = 0; i < balls.length; i++) {
-            balls[i].node.classList.toggle("ball_hidden", true);
-            balls[i].node.classList.toggle("ball_visible", false);
+        //Balls visible for x seconds
+        let mintimer = setTimeout(function (ct = widgetThis.currTrg) {
+          let balls = SVG.select(".ball_hidden").members;
+          if (balls != null) {
+            for (var i = 0; i < balls.length; i++) {
+              //if (balls[i].node.classList.contains("later_appear")) {
+              balls[i].node.classList.toggle("ball_visible", true);
+              balls[i].node.classList.toggle("ball_hidden", false);
+              //}
+            }
           }
-        }
-        clearTimeout(mintimer2);
-      }, 3600);
+          clearTimeout(mintimer);
+        }, 1800);
 
-      //then x sec and everything disapprea
+        //Balls visible for x seconds
+        let mintimer2 = setTimeout(function (ct = widgetThis.currTrg) {
+          let balls = SVG.select(".ball_visible").members;
+          if (balls != null) {
+            for (var i = 0; i < balls.length; i++) {
+              balls[i].node.classList.toggle("ball_hidden", true);
+              balls[i].node.classList.toggle("ball_visible", false);
+            }
+          }
+          clearTimeout(mintimer2);
+        }, 3600);
+
+        //then x sec and everything disapprea
+      }
     });
 
     //******************************************************* */
