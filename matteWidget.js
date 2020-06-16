@@ -36,6 +36,8 @@ export default class MatteWidget {
 
     this.svgfilename = null;
 
+    this.instruction_already_spoken = false;
+
     //get svg from upload file and save this to window.name,
     //otherwise fetch uploaded svg object stored i window.name
     if (options && options.svg != null && options.svg != false) {
@@ -140,20 +142,31 @@ export default class MatteWidget {
           )
         : "";
 
+    this.skip_auto_instruct =
+      SVG.select(".outer_frame").members[0].node.getAttribute(
+        "skip_auto_instruct"
+      ) != undefined
+        ? SVG.select(".outer_frame").members[0].node.getAttribute(
+            "skip_auto_instruct"
+          )
+        : "false";
+
     //***************************
     //Speak on page load
     //***************************
 
-    let loc =
-      document.location.href.includes(":55") == false
-        ? document.location.href
-        : "";
-    this.audioEl.src =
-      /* loc + */ this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
+    if (this.skip_auto_instruct != "true") {
+      let loc =
+        document.location.href.includes(":55") == false
+          ? document.location.href
+          : "";
+      this.audioEl.src =
+        /* loc + */ this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
 
-    this.audioEl.play().catch((e) => {
-      console.warn(e);
-    });
+      this.audioEl.play().catch((e) => {
+        console.warn(e);
+      });
+    }
 
     //Etter noen sekund blir nestepil synlig
     let mintimer = setTimeout(function () {
@@ -775,27 +788,34 @@ export default class MatteWidget {
 
     SVG.select(".show_before_speak").on("click", (event) => {
       //if (event.currentTarget.classList.contains("show_before_speak")) {
-      let balls = SVG.select(".ball_hidden").members;
-      if (balls != null) {
-        for (var i = 0; i < balls.length; i++) {
-          balls[i].node.classList.toggle("ball_visible", true);
-          balls[i].node.classList.toggle("ball_hidden", false);
-        }
-      }
-      widgetThis.currTrg = event.currentTarget;
 
-      //Balls visible for x seconds
-      let mintimer = setTimeout(function (ct = widgetThis.currTrg) {
-        let balls = SVG.select(".ball_visible").members;
+      if (
+        this.instruction_already_spoken == false &&
+        this.skip_auto_instruct == "true"
+      ) {
+        this.instruction_already_spoken = true;
+        let balls = SVG.select(".ball_hidden").members;
         if (balls != null) {
           for (var i = 0; i < balls.length; i++) {
-            balls[i].node.classList.toggle("ball_hidden", true);
-            balls[i].node.classList.toggle("ball_visible", false);
+            balls[i].node.classList.toggle("ball_visible", true);
+            balls[i].node.classList.toggle("ball_hidden", false);
           }
-          widgetThis.speak(ct);
         }
-        clearTimeout(mintimer);
-      }, 1300);
+        widgetThis.currTrg = event.currentTarget;
+
+        //Balls visible for x seconds
+        let mintimer = setTimeout(function (ct = widgetThis.currTrg) {
+          let balls = SVG.select(".ball_visible").members;
+          if (balls != null) {
+            for (var i = 0; i < balls.length; i++) {
+              balls[i].node.classList.toggle("ball_hidden", true);
+              balls[i].node.classList.toggle("ball_visible", false);
+            }
+            widgetThis.speak(ct);
+          }
+          clearTimeout(mintimer);
+        }, 1300);
+      }
       //}
 
       //}
