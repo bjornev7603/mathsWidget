@@ -37,6 +37,12 @@
   outline: 0px solid blueviolet;
 }
 
+.indicated:hover {
+  transform: translateX(-5px) translateY(-5px) scale(1.1);
+
+  outline: 1px dotted greenyellow;
+}
+
 .in_color > tspan,
 .in_color > text > tspan {
   fill: blue;

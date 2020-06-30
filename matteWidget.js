@@ -168,6 +168,9 @@ export default class MatteWidget {
       });
     }
 
+    this.show_before_speak_v2();
+    this.instruction_already_spoken = false;
+
     //Etter noen sekund blir nestepil synlig
     let mintimer = setTimeout(function () {
       let next = SVG.select(".next").members[0].node;
@@ -603,16 +606,67 @@ export default class MatteWidget {
     //selve lydfilnavnet
 
     //if speak selected number, no file num needed
-    let filenum = current_target.classList.contains("select")
-      ? ""
-      : this.getFileNumstr();
+    let filenum =
+      current_target != null && current_target.classList.contains("select")
+        ? ""
+        : this.getFileNumstr();
 
     this.audioEl.src =
       this.config.mp3BaseUrl +
       filenum +
-      this.getSelstr(current_target) + //hvis flervalg (select), hentes evt verdi som skal tales
-      ".m4a";
+      (current_target != null ? this.getSelstr(current_target) : "") +
+      ".m4a"; //hvis flervalg (select), hentes evt verdi som skal tales
     this.audioEl.play().catch((e) => console.warn(e));
+  }
+
+  show_before_speak_v2(event = null) {
+    this.curr_trg = event != null ? event.currentTarget : null;
+
+    if (
+      this.instruction_already_spoken == false &&
+      this.skip_auto_instruct == "false"
+    ) {
+      this.speak(this.curr_trg);
+      this.instruction_already_spoken = true;
+
+      let balls = SVG.select(".ball_hidden").members;
+      if (balls != null) {
+        for (var i = 0; i < balls.length; i++) {
+          if (balls[i].node.classList.contains("first_appear")) {
+            balls[i].node.classList.toggle("ball_visible", true);
+            balls[i].node.classList.toggle("ball_hidden", false);
+          }
+        }
+      }
+
+      //Balls visible for x seconds
+      let mintimer = setTimeout(function (ct = this.currTrg) {
+        let balls = SVG.select(".ball_hidden").members;
+        if (balls != null) {
+          for (var i = 0; i < balls.length; i++) {
+            //if (balls[i].node.classList.contains("later_appear")) {
+            balls[i].node.classList.toggle("ball_visible", true);
+            balls[i].node.classList.toggle("ball_hidden", false);
+            //}
+          }
+        }
+        clearTimeout(mintimer);
+      }, 1800);
+
+      //Balls visible for x seconds
+      let mintimer2 = setTimeout(function (ct = this.currTrg) {
+        let balls = SVG.select(".ball_visible").members;
+        if (balls != null) {
+          for (var i = 0; i < balls.length; i++) {
+            balls[i].node.classList.toggle("ball_hidden", true);
+            balls[i].node.classList.toggle("ball_visible", false);
+          }
+        }
+        clearTimeout(mintimer2);
+      }, 3600);
+
+      //then x sec and everything disapprea
+    }
   }
 
   runscript() {
@@ -822,51 +876,7 @@ export default class MatteWidget {
     });
 
     SVG.select(".show_before_speak_v2").on("click", (event) => {
-      if (
-        this.instruction_already_spoken == false &&
-        this.skip_auto_instruct == "true"
-      ) {
-        widgetThis.speak(event.currentTarget);
-
-        let balls = SVG.select(".ball_hidden").members;
-        if (balls != null) {
-          for (var i = 0; i < balls.length; i++) {
-            if (balls[i].node.classList.contains("first_appear")) {
-              balls[i].node.classList.toggle("ball_visible", true);
-              balls[i].node.classList.toggle("ball_hidden", false);
-            }
-          }
-        }
-        widgetThis.currTrg = event.currentTarget;
-
-        //Balls visible for x seconds
-        let mintimer = setTimeout(function (ct = widgetThis.currTrg) {
-          let balls = SVG.select(".ball_hidden").members;
-          if (balls != null) {
-            for (var i = 0; i < balls.length; i++) {
-              //if (balls[i].node.classList.contains("later_appear")) {
-              balls[i].node.classList.toggle("ball_visible", true);
-              balls[i].node.classList.toggle("ball_hidden", false);
-              //}
-            }
-          }
-          clearTimeout(mintimer);
-        }, 1800);
-
-        //Balls visible for x seconds
-        let mintimer2 = setTimeout(function (ct = widgetThis.currTrg) {
-          let balls = SVG.select(".ball_visible").members;
-          if (balls != null) {
-            for (var i = 0; i < balls.length; i++) {
-              balls[i].node.classList.toggle("ball_hidden", true);
-              balls[i].node.classList.toggle("ball_visible", false);
-            }
-          }
-          clearTimeout(mintimer2);
-        }, 3600);
-
-        //then x sec and everything disapprea
-      }
+      this.show_before_speak_v2(event);
     });
 
     //******************************************************* */
@@ -939,6 +949,8 @@ export default class MatteWidget {
       onDragStart: function (e) {
         //logger hendelser
         event = widgetThis.setEventdata("move", this);
+        //e.currentTarget.classList.toggle("indicated", true);
+        e.target.classList.toggle("indicated", true);
       },
 
       /* onDragEnter: function (e) {

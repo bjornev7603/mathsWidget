@@ -6,12 +6,15 @@ export default class makeReport {
     this.tasks_time = [];
     this.tasks_points = [];
     this.tasks_sel_els = [];
+    let attnumber = 0;
+    let found_attempt_nums = false;
 
     answers = JSON.parse(answers);
 
     let time_first = 0,
       time_last = 0,
       time_diff = 0,
+      obj = {},
       tasks = groupArrayMain(answers, "svgfile", "a_file");
     tasks = JSON.parse(tasks);
 
@@ -27,12 +30,13 @@ export default class makeReport {
       //loop ATTEMPTS at each task
       for (var att_key in task.svgfile_group) {
         let attempt = task.svgfile_group[att_key];
+
         let attemptname = attempt.a_file;
         let sel_points = 0;
         let sel_points_hit = "";
         //let sel_all_targs_hit = "";
         let sel_el = "";
-        let sel_acc_points = "";
+        let sel_acc_points = 0;
         let sel_acc_els = [];
         let hit_els = [];
         let ball_count = 0;
@@ -49,8 +53,18 @@ export default class makeReport {
             event.task_type == "ordinal" ||
             event.task_type == "quantity"
           ) {
+            //attnumber associate with filename to given attempt number in first col
+            //error if no third task
+            if (att_key == 0 && found_attempt_nums == false) {
+              for (var i = 0; i < task.svgfile_group.length; i++) {
+                obj[answers[i]] = task.svgfile_group[i].a_file;
+              }
+              found_attempt_nums = true;
+            }
+
             if (ev_key == 0) {
-              time_first = event.time;
+              time_first =
+                typeof event.time === "object" ? event.time[0] : event.time;
             }
 
             if (event.event == "select_click" || event.event == "hit") {
@@ -61,12 +75,17 @@ export default class makeReport {
                   : 0;
               //sel_el = event.event == "hit" ? event.target_val : event.s_val;
               sel_el = event.s_val;
-              sel_acc_points += sel_points;
+              sel_acc_points = sel_acc_points + sel_points;
               sel_acc_els[event.src_id] = sel_el;
-              if (event.task_type == "single_choice_hit") {
+              if (
+                event.task_type == "single_choice_hit" &&
+                event.event == "hit"
+              ) {
                 if (sel_el == event.target_val) {
                   sel_points_hit = 1;
                 } else sel_points_hit = 0;
+                //actual target id is diplayed in report
+                sel_el = event.target_val;
               }
 
               if (event.task_type == "ordinal") {
@@ -79,9 +98,11 @@ export default class makeReport {
                     hit_els[event.src_id] = true;
                   }
                 } else {
-                  if (ball_count > 0 && hit_els[event.src_id] == true) {
+                  //if (ball_count > 0 && hit_els[event.src_id] == true) {
+                  if (hit_els[event.src_id] != null) {
                     ball_count--;
-                    hit_els[event.src_id] = false;
+                    delete hit_els[event.src_id];
+                    //hit_els[event.src_id] = false;
                   }
                 }
               }
@@ -96,7 +117,7 @@ export default class makeReport {
               }
             }
             if (event.event == "de-select_click") {
-              sel_acc_points -= sel_points;
+              sel_acc_points = sel_acc_points - 1;
               if (sel_acc_els[event.src_id] != null) {
                 delete sel_acc_els[event.src_id];
               }
@@ -115,9 +136,13 @@ export default class makeReport {
                 event.task_type == "quantity"
               ) {
                 sel_points_hit = ball_count == event.num_targs_to_hit ? 1 : 0;
+                //sel_el = event.task_type == "quantity" ? ball_count : hit_els;
+                sel_el = ball_count;
               }
 
-              time_last = event.time;
+              time_last =
+                typeof event.time === "object" ? event.time[0] : event.time;
+
               time_diff = (time_last - time_first) / 1000;
               this.tasks_time[task_key][att_key] = Array(
                 taskname,
@@ -153,7 +178,7 @@ export default class makeReport {
       }
     }
 
-    createTableWorkbook(this.tasks_points);
+    createTableWorkbook(this.tasks_sel_els, obj);
 
     function cumm(sel_el) {
       let k_sep = "";
@@ -166,7 +191,7 @@ export default class makeReport {
     //*********************************************************** */
     //*********************************************************** */
 
-    function createTableWorkbook(tasks) {
+    function createTableWorkbook(tasks, obj) {
       var workbook = new $.ig.excel.Workbook(
         $.ig.excel.WorkbookFormat.excel2007
       );
@@ -175,7 +200,7 @@ export default class makeReport {
       sheet.getCell("A1").value("Forsøk");
 
       //number of columns depends on number of tasks
-      var table = sheet.tables().add("A1:Z50", true);
+      var table = sheet.tables().add("A1:AZ50", true);
 
       // Specify the style to use in the table (this can also be specified as an optional 3rd argument to the 'add' call above).
       table.style(workbook.standardTableStyles("TableStyleMedium2"));
@@ -203,7 +228,9 @@ export default class makeReport {
             }
             //add attempt name only in first, and values in the next columns
             if (first_col == true) {
-              sheet.getCell("A" + (att + 2)).value(task_attempt_values[1]);
+              sheet
+                .getCell("A" + (att + 2))
+                .value(getKeyByValue(obj, task_attempt_values[1]));
             }
 
             sheet.getCell(alfachar + (att + 2)).value(task_attempt_values[2]);
@@ -244,7 +271,18 @@ export default class makeReport {
     }
 
     function nextChar(c) {
-      return String.fromCharCode(c.charCodeAt(0) + 1);
+      if (c == "Z") {
+        return "AA";
+      }
+      if (c.length == 2) {
+        return "A" + String.fromCharCode(c.charCodeAt(1) + 1);
+      } else {
+        return String.fromCharCode(c.charCodeAt(0) + 1);
+      }
+    }
+
+    function getKeyByValue(object, value) {
+      return Object.keys(object).find((key) => object[key] === value);
     }
 
     //********************************************************************* */
