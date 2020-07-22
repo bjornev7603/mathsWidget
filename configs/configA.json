@@ -1,6 +1,6 @@
 {
-  "svgUrl": "/svgfiler/fotball.svg",
-  "mp3BaseUrl": "/mp3/",
+  "svgUrl": "./svgfiler/veronso/006_kanin.svg",
+  "mp3BaseUrl": "mp3/cornelia/",
   "viewBox": {
     "x": 1024,
     "y": 768

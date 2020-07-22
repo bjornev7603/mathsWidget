@@ -950,7 +950,7 @@ export default class MatteWidget {
         //logger hendelser
         event = widgetThis.setEventdata("move", this);
         //e.currentTarget.classList.toggle("indicated", true);
-        e.target.classList.toggle("indicated", true);
+        e.target.classList.toggle("active-svg", true);
       },
 
       /* onDragEnter: function (e) {
@@ -986,6 +986,8 @@ export default class MatteWidget {
         event.y.push(this.y);
         event.time.push(Date.now()); */
         //widgetThis.updateAnswer(event);
+
+        e.target.classList.toggle("active-svg", false);
 
         this.target.style.width = "";
         this.target.style.height = "";
