@@ -964,6 +964,20 @@ export default class MatteWidget {
       }, */
 
       onDrag: function (evt) {
+        var i = widgetThis.targets.members.length;
+        while (--i > -1) {
+          let trg_node = widgetThis.targets.members[i].node;
+          if (this.hitTest(trg_node)) {
+            if (trg_node.classList.contains("illustrate")) {
+              trg_node.classList.toggle("illustrate_hit", true);
+            }
+          } else {
+            if (trg_node.classList.contains("illustrate_hit")) {
+              trg_node.classList.toggle("illustrate_hit", false);
+            }
+          }
+        }
+
         var terskel = 6;
         let lastX = event.x[event.x.length - 1],
           lastY = event.y[event.y.length - 1];
@@ -995,6 +1009,7 @@ export default class MatteWidget {
         //Ved treff av et target
         while (--i > -1) {
           let trg_node = widgetThis.targets.members[i].node;
+          trg_node.classList.toggle("illustrate_hit", false);
           if (this.hitTest(trg_node)) {
             //skriver info om posisjon, tidspkt og target_id for treff av target
             let selval =
@@ -1041,11 +1056,11 @@ export default class MatteWidget {
               });
             }
 
-            //frame around target if hit
+            /* //frame around target if hit
             if (trg_node.classList.contains("illustrate")) {
               trg_node.classList.toggle("framed", true);
               trg_node.classList.toggle("target", false);
-            }
+            } */
 
             /* let sources = SVG.select(".source").members;
             for (var xx = 0; xx < sources.length; xx++) {

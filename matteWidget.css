@@ -50,8 +50,19 @@
 
 .active-svg:hover {
   filter: hue-rotate(40deg) saturate(0.5) brightness(390%) saturate(4);
-  opacity: 0.5;
+  opacity: 0.7;
   background-color: red;
+}
+
+.illustrate_hit 
+/* .illustrate_hit > g > path, 
+.illustrate_hit > g > g > path  */ {
+  filter: hue-rotate(40deg) saturate(0.5) brightness(390%) saturate(4);
+  opacity: 0.9;
+  background-color: yellow;
+  fill: greenyellow;
+  outline: 1px solid gainsboro;
+  transform: scale(1.003);
 }
 
 /* *, *::after, *::before {
