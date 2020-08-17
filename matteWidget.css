@@ -18,14 +18,14 @@
 .framed_ios > image,
 .framed_ios > g > image
 /*, .framed_ios > ellipse */ {
-  outline-style: solid;
-  outline-color: blueviolet;
-  outline-offset: 0vmin;
-  outline-width: medium;
+  outline: 2px solid gray;
+
+  /* outline-offset: 0vmin;
+  outline-width: medium; */
 }
 
 .framed {
-  outline: 3px solid blueviolet;
+  outline: 1px solid gray;
 }
 
 .unframed,

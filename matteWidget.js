@@ -267,7 +267,9 @@ export default class MatteWidget {
   reset_svg(ind, lg) {
     //reset select element
 
-    var memb = document.querySelectorAll(".select, .start_timer, .next, .info");
+    var memb = document.querySelectorAll(
+      ".select, .start_timer, .next, .info, .next_activated"
+    );
     if (memb.length > 0) {
       for (var j = 0; j < memb.length; j++) {
         memb[j].classList.toggle(this.selected_class, false);
@@ -933,14 +935,24 @@ export default class MatteWidget {
     //***************************************
     //***************************************
     let event;
+    let default_x = -180;
+    let default_y = -210;
     Draggable.create(".source", {
       //setter bounds til å dekke alt (noe svg'er med rare startverdier)
-      /*bounds:  {
-        minX: -400,
-        maxX: 700,
-        minY: -550,
-        maxY: 250,
-      } ,*/
+      bounds: {
+        top: 0,
+        minX: 0,
+        maxX: 1000,
+        minY: 0,
+        maxY: 750,
+        left: 0,
+        width: 1000,
+        height: 750,
+        /* minX: default_x,
+        maxX: default_x + 1024,
+        minY: default_y,
+        maxY: default_y + 768, */
+      },
       bounds: "#" + imid,
       onDragLeave: function () {
         //this.update();
@@ -1010,18 +1022,18 @@ export default class MatteWidget {
         while (--i > -1) {
           let trg_node = widgetThis.targets.members[i].node;
           trg_node.classList.toggle("illustrate_hit", false);
+
+          //skriver info om posisjon, tidspkt og target_id for treff av target
+          let selval =
+            this.target.attributes["selectvalue"] != null
+              ? this.target.attributes["selectvalue"].value
+              : "";
+
+          let targ_value =
+            trg_node.attributes["targetvalue"] != null
+              ? trg_node.attributes["targetvalue"].value
+              : "";
           if (this.hitTest(trg_node)) {
-            //skriver info om posisjon, tidspkt og target_id for treff av target
-            let selval =
-              this.target.attributes["selectvalue"] != null
-                ? this.target.attributes["selectvalue"].value
-                : "";
-
-            let targ_value =
-              trg_node.attributes["targetvalue"] != null
-                ? trg_node.attributes["targetvalue"].value
-                : "";
-
             let targ_class = "";
             if (trg_node.classList.contains("left")) {
               targ_class = "left";
@@ -1029,15 +1041,16 @@ export default class MatteWidget {
             if (trg_node.classList.contains("right")) {
               targ_class = "right";
             }
-
-            //logger hendelser
-            widgetThis.setEventdata(
-              "hit",
-              this,
-              trg_node.id,
-              targ_value,
-              targ_class
-            );
+            if (targ_value == selval) {
+              //logger hendelser
+              widgetThis.setEventdata(
+                "hit",
+                this,
+                trg_node.id,
+                targ_value,
+                targ_class
+              );
+            } else event = widgetThis.setEventdata("not_hit", this);
 
             var pos = widgetThis.targets.members[i].bbox();
             var t = pos.x2 * 0.97 + " " + pos.cy * 0.95;
@@ -1087,7 +1100,9 @@ export default class MatteWidget {
               trg_node.classList.toggle("framed", false);
               trg_node.classList.toggle("target", true);
             }
-            event = widgetThis.setEventdata("not_hit", this);
+            if (targ_value == selval /* && this.target.id == trg_node.id */) {
+              event = widgetThis.setEventdata("not_hit", this);
+            }
           }
         }
       },
