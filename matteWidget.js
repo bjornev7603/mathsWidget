@@ -1,5 +1,5 @@
-//export default class MatteWidget {
-class MatteWidget {
+export default class MatteWidget {
+  //class MatteWidget {
   constructor(divElementId, config, answer = null, onAnswer, options) {
     // DEBUG if playback
     console.log(
@@ -82,7 +82,7 @@ class MatteWidget {
     this.svgelement.viewbox(0, 0, this.config.viewBox.x, this.config.viewBox.y);
 
     if (screenfull.isEnabled) {
-      // screenfull.request();
+      screenfull.request();
     }
     this.width_svg = size;
     this.height_svg = size;
