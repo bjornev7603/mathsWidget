@@ -21,8 +21,8 @@ export default class MatteWidget {
       svgUrl: null,
       mp3BaseUrl: null,
       viewBox: {
-        x: 1024,
-        y: 768,
+        x: 1600,
+        y: 1200,
       },
     };
     this.config = {
@@ -55,8 +55,8 @@ export default class MatteWidget {
     //if Ipad (ioS), additional dom elements is given CSS class,
     //because ioS does not allow styling of container elements
 
-    //let css class always be framed_ios
-    this.selected_class = "framed_ios";
+    //let css class always be framed
+    this.selected_class = "framed";
     /* this.getOS() == "iOS" ? "framed_ios" : "framed"; */
 
     this.size_src_obj = 0; //reset size of object when replaying
@@ -78,7 +78,12 @@ export default class MatteWidget {
 
     const size = options.playback ? "100%" : "90%";
     this.svgelement = SVG(this.divElementId).size("85%", "85%");
+
     this.svgelement.viewbox(0, 0, this.config.viewBox.x, this.config.viewBox.y);
+
+    if (screenfull.isEnabled) {
+      // screenfull.request();
+    }
     this.width_svg = size;
     this.height_svg = size;
     this.targets;
@@ -161,7 +166,7 @@ export default class MatteWidget {
           ? document.location.href
           : "";
       this.audioEl.src =
-        /* loc + */ this.config.mp3BaseUrl + this.getFileNumstr() + ".m4a";
+        /* loc + */ this.config.mp3BaseUrl + this.getFileNumstr() + ".mp3";
 
       this.audioEl.play().catch((e) => {
         console.warn(e);
@@ -617,7 +622,7 @@ export default class MatteWidget {
       this.config.mp3BaseUrl +
       filenum +
       (current_target != null ? this.getSelstr(current_target) : "") +
-      ".m4a"; //hvis flervalg (select), hentes evt verdi som skal tales
+      ".mp3"; //hvis flervalg (select), hentes evt verdi som skal tales
     this.audioEl.play().catch((e) => console.warn(e));
   }
 
@@ -735,7 +740,7 @@ export default class MatteWidget {
 
       if (event.currentTarget.classList.contains("speak")) {
         this.audioEl.src =
-          this.config.mp3BaseUrl + this.getFileNumstr() + "next.m4a";
+          this.config.mp3BaseUrl + this.getFileNumstr() + "next.mp3";
         this.audioEl.play().catch((e) => {
           console.warn(e);
           customNav.next();
@@ -839,7 +844,9 @@ export default class MatteWidget {
       if (event.currentTarget.classList.contains("info")) {
         this.setEventdata("info_click", event);
       }
-      widgetThis.speak(event.currentTarget);
+      if (event.currentTarget.classList.contains("speak")) {
+        widgetThis.speak(event.currentTarget);
+      }
     });
 
     SVG.select(".show_before_speak").on("click", (event) => {
@@ -887,8 +894,8 @@ export default class MatteWidget {
     SVG.select(".select").on("click", (event) => {
       var memb = document.getElementsByClassName("select");
 
-      //If node with select class also contains class multiple, more then one node may be selected and deselected
-      if (event.currentTarget.classList.contains("multiple")) {
+      //If tasktype is "multi_choice", more then one node may be selected and deselected
+      if (this.tasktype == "multi_choice") {
         if (
           event.currentTarget.classList.contains(this.selected_class) == false
         ) {
@@ -941,19 +948,19 @@ export default class MatteWidget {
       //setter bounds til å dekke alt (noe svg'er med rare startverdier)
       bounds: {
         top: 0,
-        minX: 0,
-        maxX: 1000,
+        /* minX: 0,
+        maxX: 1600,
         minY: 0,
-        maxY: 750,
+        maxY: 1200, */
         left: 0,
-        width: 1000,
-        height: 750,
+        width: this.config.viewBox.x,
+        height: this.config.viewBox.y,
         /* minX: default_x,
         maxX: default_x + 1024,
         minY: default_y,
         maxY: default_y + 768, */
       },
-      bounds: "#" + imid,
+      //bounds: "#" + imid,
       onDragLeave: function () {
         //this.update();
       },
@@ -1014,10 +1021,13 @@ export default class MatteWidget {
         //widgetThis.updateAnswer(event);
 
         e.target.classList.toggle("active-svg", false);
+        this.target.classList.toggle("speak", false);
 
         this.target.style.width = "";
         this.target.style.height = "";
         var i = widgetThis.targets.members.length;
+        let written_not_hit = false;
+        let is_hit = false;
         //Ved treff av et target
         while (--i > -1) {
           let trg_node = widgetThis.targets.members[i].node;
@@ -1041,7 +1051,10 @@ export default class MatteWidget {
             if (trg_node.classList.contains("right")) {
               targ_class = "right";
             }
-            if (targ_value == selval) {
+            if (
+              targ_value == selval ||
+              (selval != "" && widgetThis.tasktype == "dice_sum")
+            ) {
               //logger hendelser
               widgetThis.setEventdata(
                 "hit",
@@ -1050,6 +1063,13 @@ export default class MatteWidget {
                 targ_value,
                 targ_class
               );
+              is_hit = true;
+              if (
+                widgetThis.answer[widgetThis.answer.length - 2].event ==
+                "not_hit"
+              ) {
+                widgetThis.answer.splice(widgetThis.answer.length - 2, 1);
+              }
             } else event = widgetThis.setEventdata("not_hit", this);
 
             var pos = widgetThis.targets.members[i].bbox();
@@ -1091,7 +1111,7 @@ export default class MatteWidget {
               widgetThis.audioEl.src =
                 widgetThis.config.mp3BaseUrl +
                 widgetThis.getFileNumstr() +
-                "hit.m4a";
+                "hit.mp3";
               widgetThis.audioEl.play().catch((e) => console.warn(e));
             }
           } else {
@@ -1100,8 +1120,16 @@ export default class MatteWidget {
               trg_node.classList.toggle("framed", false);
               trg_node.classList.toggle("target", true);
             }
-            if (targ_value == selval /* && this.target.id == trg_node.id */) {
-              event = widgetThis.setEventdata("not_hit", this);
+            //if this source object is dragged to an not_hit area (not invoking the hit_test)
+
+            if (
+              targ_value == selval ||
+              (widgetThis.tasktype == "dice_sum" && is_hit == false)
+            ) {
+              if (written_not_hit == false) {
+                event = widgetThis.setEventdata("not_hit", this);
+                written_not_hit = true;
+              }
             }
           }
         }
@@ -1184,6 +1212,7 @@ export default class MatteWidget {
 var matteWidget = {
   scripts: [
     "/libs/nav/customNav.js",
+    "/libs/screenfull/screenfull.js",
     "https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.6/svg.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/plugins/CSSPlugin.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenLite.min.js",
@@ -1229,16 +1258,16 @@ var matteWidget = {
     svgUrl: "url for svgs",
     mp3BaseUrl: "base url for mp3-files",
     viewBox: {
-      x: 1024,
-      y: 768,
+      x: 1600,
+      y: 1200,
     },
   },
   configStructure: {
     svgUrl: "url for svgs",
     mp3BaseUrl: "base url for mp3-files",
     viewBox: {
-      x: 1024,
-      y: 768,
+      x: 1600,
+      y: 1200,
     },
   },
 };
