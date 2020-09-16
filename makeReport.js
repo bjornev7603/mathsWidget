@@ -1,7 +1,13 @@
 export default class makeReport {
   constructor(answers = null) {
     //jsonify: add "[" and "]" to start and end, strip "," to end
-    answers = "[" + answers.slice(0, -1) + "]";
+    let startfile_str = answers.match(/.*(?=,)?/);
+
+    answers =
+      "[" +
+      JSON.stringify(startfile_str[0].slice(0, -1)) +
+      answers.slice(startfile_str[0].length - 1, -1) +
+      "]";
 
     this.tasks_time = [];
     this.tasks_points = [];
@@ -39,6 +45,10 @@ export default class makeReport {
         let sel_acc_points = 0;
         let sel_acc_els = [];
         let hit_els = [];
+        //let hit_src = [];
+        let hit_targets = [];
+        //let xhit_trg_src = [];
+        let hit_trg_src = [];
         let ball_count = 0;
 
         time_first = time_last = time_diff = 0;
@@ -51,7 +61,8 @@ export default class makeReport {
             event.task_type == "multi_choice" ||
             event.task_type == "single_choice_hit" ||
             event.task_type == "ordinal" ||
-            event.task_type == "quantity"
+            event.task_type == "quantity" ||
+            event.task_type == "dice_sum"
           ) {
             //attnumber associate with filename to given attempt number in first col
             //error if no third task
@@ -115,6 +126,19 @@ export default class makeReport {
                   hit_els[event.src_id] = true;
                 }
               }
+
+              //IF task of dicesum (eg dice hit target),
+              //AND this ball is not registered as in target
+              // -> increase ball count
+              if (event.task_type == "dice_sum") {
+                hit_trg_src[event.src_id] =
+                  hit_trg_src[event.target_id] != undefined
+                    ? event.target_id +
+                      "|" +
+                      (parseInt(hit_trg_src[event.target_id]) +
+                        parseInt(event.s_val))
+                    : event.target_id + "|" + parseInt(event.s_val);
+              }
             }
             if (event.event == "de-select_click") {
               sel_acc_points = sel_acc_points - 1;
@@ -124,9 +148,17 @@ export default class makeReport {
               //remove element from sel_acc_els[src_id]
             }
             if (event.event == "not_hit") {
+              //if a ball hit from a specific source ball exists and this is involved in not_hit event, delete it
               if (hit_els[event.src_id] != null) {
                 delete hit_els[event.src_id];
                 ball_count--;
+              }
+              //if dice task and a specific target has a dice removed from its surface, remove the dice points of this target's actual dice points
+              if (
+                event.task_type == "dice_sum" &&
+                hit_trg_src[event.src_id] != undefined
+              ) {
+                delete hit_trg_src[event.src_id];
               }
             }
 
@@ -163,6 +195,24 @@ export default class makeReport {
               sel_el = sel_acc_els;
             }
 
+            if (event.task_type == "dice_sum" && ev_key == events.length - 1) {
+              //Dices that hit targets are indexes in hit_trg_src array (trg id | val). Loop array and group by trg id to find sum per targets.
+              //Points given if targets have dices with value of n
+              for (var key in hit_trg_src) {
+                let trg_sval = hit_trg_src[key].split("|");
+
+                if (hit_targets[trg_sval[0]] == undefined) {
+                  hit_targets[trg_sval[0]] = parseInt(trg_sval[1]);
+                } else
+                  hit_targets[trg_sval[0]] =
+                    parseInt(hit_targets[trg_sval[0]]) + parseInt(trg_sval[1]);
+              }
+              for (var key in hit_targets) {
+                sel_points +=
+                  hit_targets[key] == event.num_targs_to_hit ? 1 : 0;
+              }
+            }
+
             this.tasks_points[task_key][att_key] = Array(
               taskname,
               attemptname,
@@ -178,7 +228,7 @@ export default class makeReport {
       }
     }
 
-    createTableWorkbook(this.tasks_sel_els, obj);
+    createTableWorkbook(this.tasks_points, obj);
 
     function cumm(sel_el) {
       let k_sep = "";
