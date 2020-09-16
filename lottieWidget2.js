@@ -13,7 +13,7 @@ class LottieWidget {
     this.params = {
       container: this.lottieDiv,
       renderer: "svg",
-      loop: true,
+      loop: false,
       autoplay: true,
     };
 
