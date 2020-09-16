@@ -1,5 +1,5 @@
-export default class MatteWidget {
-  //class MatteWidget {
+//export default class MatteWidget {
+class MatteWidget {
   constructor(divElementId, config, answer = null, onAnswer, options) {
     // DEBUG if playback
     console.log(
@@ -1021,7 +1021,7 @@ export default class MatteWidget {
         //widgetThis.updateAnswer(event);
 
         e.target.classList.toggle("active-svg", false);
-        this.target.classList.toggle("speak", false);
+        //this.target.classList.toggle("speak", false);
 
         this.target.style.width = "";
         this.target.style.height = "";
