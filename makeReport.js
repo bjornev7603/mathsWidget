@@ -56,6 +56,21 @@ export default class makeReport {
         for (var ev_key in attempt.a_file_group) {
           let event = attempt.a_file_group[ev_key];
           let events = attempt.a_file_group;
+
+          //attnumber associate with filename to given attempt number in first col
+          //error if no third task
+          if (att_key == 0 && found_attempt_nums == false) {
+            let ansers2 = JSON.stringify(startfile_str[0])
+              .slice(1, -1)
+              .split(",");
+            //let ansers = answers[0].split(",");
+            for (var i = 0; i < ansers2.length; i++) {
+              let att_task = ansers2[i].split(":");
+              obj[att_task[1]] = att_task[0];
+            }
+            found_attempt_nums = true;
+          }
+
           if (
             event.task_type == "single_choice" ||
             event.task_type == "multi_choice" ||
@@ -64,30 +79,41 @@ export default class makeReport {
             event.task_type == "quantity" ||
             event.task_type == "dice_sum"
           ) {
-            //attnumber associate with filename to given attempt number in first col
-            //error if no third task
-            if (att_key == 0 && found_attempt_nums == false) {
-              for (var i = 0; i < task.svgfile_group.length; i++) {
-                obj[answers[i]] = task.svgfile_group[i].a_file;
-              }
-              found_attempt_nums = true;
-            }
-
             if (ev_key == 0) {
               time_first =
                 typeof event.time === "object" ? event.time[0] : event.time;
             }
 
-            if (event.event == "select_click" || event.event == "hit") {
+            if (
+              event.event == "select_click" ||
+              event.event == "hit" ||
+              (event.event == "not_hit" &&
+                (task.svgfile == "129_numberandquantity7.svg" ||
+                  task.svgfile == "130_numberandquantity8.svg" ||
+                  task.svgfile == "139_quantitydiscrimination7.svg"))
+            ) {
               sel_points =
                 event.sel_points != null &&
                 typeof Number(event.sel_points) === "number"
                   ? Number(event.sel_points)
                   : 0;
               //sel_el = event.event == "hit" ? event.target_val : event.s_val;
-              sel_el = event.s_val;
+
+              //if we also want to know the wrong target elements selected
+              if (event.task_type == "ordinalx") {
+                sel_el = event.s_val + ";" + event.target_val;
+              } else {
+                sel_el = event.s_val;
+              }
+
+              //no values in quantity tasks, use id as value for sel_id instead
+              if (event.task_type == "quantity") {
+                sel_el = event.src_id;
+              }
               sel_acc_points = sel_acc_points + sel_points;
-              sel_acc_els[event.src_id] = sel_el;
+
+              sel_acc_els[event.src_id] = sel_el + "|" + event.sel_points;
+
               if (
                 event.task_type == "single_choice_hit" &&
                 event.event == "hit"
@@ -141,13 +167,21 @@ export default class makeReport {
               }
             }
             if (event.event == "de-select_click") {
-              sel_acc_points = sel_acc_points - 1;
+              let val_point = sel_acc_els[event.src_id].split("|");
+              if (val_point[1] == "1") {
+                sel_acc_points = sel_acc_points - 1;
+              }
               if (sel_acc_els[event.src_id] != null) {
                 delete sel_acc_els[event.src_id];
               }
               //remove element from sel_acc_els[src_id]
             }
-            if (event.event == "not_hit") {
+            if (
+              event.event == "not_hit" &&
+              task.svgfile != "129_numberandquantity7.svg" &&
+              task.svgfile != "130_numberandquantity8.svg" &&
+              task.svgfile != "139_quantitydiscrimination7.svg"
+            ) {
               //if a ball hit from a specific source ball exists and this is involved in not_hit event, delete it
               if (hit_els[event.src_id] != null) {
                 delete hit_els[event.src_id];
@@ -169,7 +203,9 @@ export default class makeReport {
               ) {
                 sel_points_hit = ball_count == event.num_targs_to_hit ? 1 : 0;
                 //sel_el = event.task_type == "quantity" ? ball_count : hit_els;
-                sel_el = ball_count;
+
+                //sel_el = ball_count;
+                sel_el = sel_acc_els;
               }
 
               time_last =
@@ -183,16 +219,19 @@ export default class makeReport {
               );
             }
 
-            if (event.task_type == "single_choice") {
-            }
-
             //if multiple choice, the values are accumulated and written to result arrays on last event in attempt at task
             if (
-              event.task_type == "multi_choice" &&
+              (event.task_type == "multi_choice" ||
+                event.task_type == "ordinal" ||
+                event.task_type == "quantity") &&
               ev_key == events.length - 1
             ) {
-              sel_points = sel_acc_points;
-              sel_el = sel_acc_els;
+              if (event.task_type == "multi_choice") {
+                sel_points = sel_acc_points;
+                sel_el = sel_acc_els;
+              } else {
+                sel_el = sel_acc_els;
+              }
             }
 
             if (event.task_type == "dice_sum" && ev_key == events.length - 1) {
@@ -218,6 +257,7 @@ export default class makeReport {
               attemptname,
               sel_points_hit > 0 ? sel_points_hit : sel_points
             );
+
             this.tasks_sel_els[task_key][att_key] = Array(
               taskname,
               attemptname,
@@ -228,12 +268,24 @@ export default class makeReport {
       }
     }
 
-    createTableWorkbook(this.tasks_points, obj);
+    let tasks_sco_sel_tim = {};
+    tasks_sco_sel_tim = [
+      this.tasks_points,
+      this.tasks_sel_els,
+      this.tasks_time,
+    ];
+
+    createTableWorkbook(tasks_sco_sel_tim, obj);
 
     function cumm(sel_el) {
-      let k_sep = "";
+      let k_sep = "",
+        sel_ele = "";
       for (var key in sel_el) {
-        k_sep += sel_el[key] + ",";
+        sel_ele = sel_el[key].contains("|")
+          ? sel_el[key].split("|")[0]
+          : sel_el;
+
+        k_sep += sel_ele + ",";
       }
       return k_sep.slice(0, -1);
     }
@@ -241,61 +293,77 @@ export default class makeReport {
     //*********************************************************** */
     //*********************************************************** */
 
-    function createTableWorkbook(tasks, obj) {
+    function createTableWorkbook(tasks_sco_sel_tim, obj) {
       var workbook = new $.ig.excel.Workbook(
         $.ig.excel.WorkbookFormat.excel2007
       );
-      var sheet = workbook.worksheets().add("Sheet1");
+      let sheets = [];
+      sheets[0] = workbook.worksheets().add("Score");
+      sheets[1] = workbook.worksheets().add("Selections");
+      sheets[2] = workbook.worksheets().add("Time consumed");
 
-      sheet.getCell("A1").value("Forsøk");
+      for (var key in tasks_sco_sel_tim) {
+        let tasks = tasks_sco_sel_tim[key];
 
-      //number of columns depends on number of tasks
-      var table = sheet.tables().add("A1:AZ50", true);
+        sheets[key].getCell("A1").value("Forsøk");
 
-      // Specify the style to use in the table (this can also be specified as an optional 3rd argument to the 'add' call above).
-      table.style(workbook.standardTableStyles("TableStyleMedium2"));
+        //number of columns depends on number of tasks
+        var table = sheets[key].tables().add("A1:AZ70", true);
 
-      let alfachar = "A";
-      let first_col = true;
-      let valid_task_nr = 0;
-      for (let task = 0; task < tasks.length; task++) {
-        let attempts = tasks[task];
-        if (attempts.length != 0) {
-          valid_task_nr++;
-          let first_row = true; //some tasks are not listed in taskreport (eg start_task)
+        // Specify the style to use in the table (this can also be specified as an optional 3rd argument to the 'add' call above).
+        table.style(workbook.standardTableStyles("TableStyleMedium2"));
 
-          for (let att = 0; att < attempts.length; att++) {
-            let task_attempt_values = attempts[att];
+        let row_of_firstcol = {};
+        let alfachar = "A";
+        let first_col = true;
+        let valid_task_nr = 0;
+        for (let task = 0; task < tasks.length; task++) {
+          let attempts = tasks[task];
 
-            //add header cols with task names
-            if (first_row == true) {
-              sheet
-                .columns(valid_task_nr)
-                .setWidth(72, $.ig.excel.WorksheetColumnWidthUnit.pixel);
-              first_row = false;
-              alfachar = nextChar(alfachar);
-              sheet.getCell(alfachar + 1).value(task_attempt_values[0]);
+          if (attempts.length != 0) {
+            valid_task_nr++;
+            let first_row = true; //some tasks are not listed in taskreport (eg start_task)
+
+            for (let att = 0; att < attempts.length; att++) {
+              let task_attempt_values = attempts[att];
+
+              //add header cols with task names
+              if (first_row == true) {
+                sheets[key]
+                  .columns(valid_task_nr)
+                  .setWidth(72, $.ig.excel.WorksheetColumnWidthUnit.pixel);
+                first_row = false;
+                alfachar = nextChar(alfachar);
+                sheets[key].getCell(alfachar + 1).value(task_attempt_values[0]);
+              }
+              //add attempt name only in first, and values in the next columns
+              if (first_col == true) {
+                row_of_firstcol[task_attempt_values[1].slice(5, 9)] = att;
+                sheets[key]
+                  .getCell("A" + (att + 2))
+                  .value(
+                    getKeyByValue(obj, task_attempt_values[1].slice(5, 9))
+                  );
+              }
+
+              sheets[key]
+                .getCell(
+                  alfachar +
+                    (row_of_firstcol[task_attempt_values[1].slice(5, 9)] + 2)
+                )
+                .value(task_attempt_values[2]);
             }
-            //add attempt name only in first, and values in the next columns
-            if (first_col == true) {
-              sheet
-                .getCell("A" + (att + 2))
-                .value(getKeyByValue(obj, task_attempt_values[1]));
-            }
-
-            sheet.getCell(alfachar + (att + 2)).value(task_attempt_values[2]);
+            if (first_col == true) first_col = false;
           }
-          if (first_col == true) first_col = false;
         }
-      }
 
-      // Sort the table by the Applicant column
-      table
-        .columns("Forsøk")
-        .sortCondition(new $.ig.excel.OrderedSortCondition());
+        // Sort the table by the Forsøk column
+        //table
+        //.columns("Forsøk")
+        //.sortCondition(new $.ig.excel.OrderedSortCondition());
 
-      // Filter out the Approved applicants
-      /* table
+        // Filter out the Approved applicants
+        /* table
         .columns("Status")
         .applyCustomFilter(
           new $.ig.excel.CustomFilterCondition(
@@ -304,6 +372,7 @@ export default class makeReport {
           )
         );
  */
+      }
       // Save the workbook
       saveWorkbook(workbook, "Table.xlsx");
     }

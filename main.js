@@ -20,6 +20,7 @@ let svg;
 
 answerJsons.onchange = (inn) => {
   let jsonstreng = "";
+  let attemp_codes = [];
   let chosen_files = inn.currentTarget.files;
 
   const promise1 = new Promise((resolve, reject) => {
@@ -27,16 +28,24 @@ answerJsons.onchange = (inn) => {
       (function (f, i) {
         var filereader = new FileReader();
 
+        if (!attemp_codes.includes(f.name.slice(5, 9))) {
+          attemp_codes[i] = f.name.slice(5, 9);
+        }
+
         filereader.onloadend = function (e) {
           //console.log("filereader.onloaded: File: " + f.name + " index:" + i);
+          let sss = attemp_codes[i] != undefined ? attemp_codes[i] + ":" : "";
           jsonstreng +=
+            sss +
             e.currentTarget.result
               .trim()
               .slice(1, -1)
               .replace(
                 /"tdiff": ""|"tdiff": null|"tdiff": "NaN"/g,
                 '"a_file": "' + chosen_files[i].name + '"'
-              ) + ",";
+              ) +
+            ",";
+
           if (i == chosen_files.length - 1) {
             resolve(jsonstreng);
           }
