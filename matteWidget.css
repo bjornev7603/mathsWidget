@@ -57,7 +57,7 @@
   background-color: yellow;
   fill: greenyellow;
   outline: 3px solid gainsboro;
-  transform: scale(1.003);
+  /* transform: scale(1.003); */
 }
 
 /* *, *::after, *::before {
