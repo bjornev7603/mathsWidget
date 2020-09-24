@@ -3,9 +3,10 @@ export default class makeReport {
     //jsonify: add "[" and "]" to start and end, strip "," to end
     let startfile_str = answers.match(/.*(?=,)?/);
 
+    let forsok_files = startfile_str[0].slice(0, -1);
     answers =
       "[" +
-      JSON.stringify(startfile_str[0].slice(0, -1)) +
+      JSON.stringify(forsok_files) +
       answers.slice(startfile_str[0].length - 1, -1) +
       "]";
 
@@ -29,29 +30,27 @@ export default class makeReport {
       let task = tasks[task_key];
       let taskname = task.svgfile;
 
-      this.tasks_time[task_key] = [];
-      this.tasks_points[task_key] = [];
-      this.tasks_sel_els[task_key] = [];
+      this.tasks_time[task_key] = task_key == 0 ? forsok_files.split(",") : [];
+      this.tasks_points[task_key] =
+        task_key == 0 ? forsok_files.split(",") : [];
+      this.tasks_sel_els[task_key] =
+        task_key == 0 ? forsok_files.split(",") : [];
 
       //loop ATTEMPTS at each task
       for (var att_key in task.svgfile_group) {
         let attempt = task.svgfile_group[att_key];
-
         let attemptname = attempt.a_file;
         let sel_points = 0;
         let sel_points_hit = "";
-        //let sel_all_targs_hit = "";
         let sel_el = "";
         let sel_acc_points = 0;
         let sel_acc_els = [];
         let hit_els = [];
-        //let hit_src = [];
         let hit_targets = [];
-        //let xhit_trg_src = [];
         let hit_trg_src = [];
         let ball_count = 0;
-
         time_first = time_last = time_diff = 0;
+
         //loop EVENTS in each attempt
         for (var ev_key in attempt.a_file_group) {
           let event = attempt.a_file_group[ev_key];
@@ -63,7 +62,7 @@ export default class makeReport {
             let ansers2 = JSON.stringify(startfile_str[0])
               .slice(1, -1)
               .split(",");
-            //let ansers = answers[0].split(",");
+
             for (var i = 0; i < ansers2.length; i++) {
               let att_task = ansers2[i].split(":");
               obj[att_task[1]] = att_task[0];
@@ -315,52 +314,52 @@ export default class makeReport {
 
         let row_of_firstcol = {};
         let alfachar = "A";
-        let first_col = true;
-        let valid_task_nr = 0;
+        let att_id_txt;
+
+        //each tasks in horizontal (letter) columns
         for (let task = 0; task < tasks.length; task++) {
           let attempts = tasks[task];
-
           if (attempts.length != 0) {
-            valid_task_nr++;
             let first_row = true; //some tasks are not listed in taskreport (eg start_task)
 
+            //each task's attempts in vertical (number) rows
             for (let att = 0; att < attempts.length; att++) {
               let task_attempt_values = attempts[att];
 
-              //add header cols with task names
-              if (first_row == true) {
-                sheets[key]
-                  .columns(valid_task_nr)
-                  .setWidth(72, $.ig.excel.WorksheetColumnWidthUnit.pixel);
-                first_row = false;
-                alfachar = nextChar(alfachar);
-                sheets[key].getCell(alfachar + 1).value(task_attempt_values[0]);
-              }
-              //add attempt name only in first, and values in the next columns
-              if (first_col == true) {
-                row_of_firstcol[task_attempt_values[1].slice(5, 9)] = att;
-                sheets[key]
-                  .getCell("A" + (att + 2))
-                  .value(
-                    getKeyByValue(obj, task_attempt_values[1].slice(5, 9))
-                  );
-              }
+              //add attempt name only in first column, and values in the next columns
+              if (task == 0) {
+                att_id_txt = attempts[att].split(":");
+                row_of_firstcol[att_id_txt[0]] = att;
 
-              sheets[key]
-                .getCell(
-                  alfachar +
-                    (row_of_firstcol[task_attempt_values[1].slice(5, 9)] + 2)
-                )
-                .value(task_attempt_values[2]);
+                sheets[key].getCell("A" + (att + 2)).value(att_id_txt[1]);
+              } else {
+                //add header cols with task names
+                if (first_row == true) {
+                  sheets[key]
+                    .columns(task)
+                    .setWidth(72, $.ig.excel.WorksheetColumnWidthUnit.pixel);
+                  first_row = false;
+                  alfachar = nextChar(alfachar);
+                  sheets[key]
+                    .getCell(alfachar + 1)
+                    .value(task_attempt_values[0]);
+                }
+
+                sheets[key]
+                  .getCell(
+                    alfachar +
+                      (row_of_firstcol[task_attempt_values[1].slice(5, 9)] + 2)
+                  )
+                  .value(task_attempt_values[2]);
+              }
             }
-            if (first_col == true) first_col = false;
           }
         }
 
         // Sort the table by the Forsøk column
-        //table
-        //.columns("Forsøk")
-        //.sortCondition(new $.ig.excel.OrderedSortCondition());
+        table
+          .columns("Forsøk")
+          .sortCondition(new $.ig.excel.OrderedSortCondition());
 
         // Filter out the Approved applicants
         /* table
