@@ -14,7 +14,6 @@ export default class makeReport {
     this.tasks_points = [];
     this.tasks_sel_els = [];
     let attnumber = 0;
-    let found_attempt_nums = false;
 
     answers = JSON.parse(answers);
 
@@ -55,20 +54,6 @@ export default class makeReport {
         for (var ev_key in attempt.a_file_group) {
           let event = attempt.a_file_group[ev_key];
           let events = attempt.a_file_group;
-
-          //attnumber associate with filename to given attempt number in first col
-          //error if no third task
-          if (att_key == 0 && found_attempt_nums == false) {
-            let ansers2 = JSON.stringify(startfile_str[0])
-              .slice(1, -1)
-              .split(",");
-
-            for (var i = 0; i < ansers2.length; i++) {
-              let att_task = ansers2[i].split(":");
-              obj[att_task[1]] = att_task[0];
-            }
-            found_attempt_nums = true;
-          }
 
           if (
             event.task_type == "single_choice" ||
@@ -209,7 +194,7 @@ export default class makeReport {
 
               time_last =
                 typeof event.time === "object" ? event.time[0] : event.time;
-
+              //POPULATE POINTS, SELECTIONS AND TIME ARRAYS FOR DISPLAY IN SHEETS
               time_diff = (time_last - time_first) / 1000;
               this.tasks_time[task_key][att_key] = Array(
                 taskname,
@@ -218,7 +203,7 @@ export default class makeReport {
               );
             }
 
-            //if multiple choice, the values are accumulated and written to result arrays on last event in attempt at task
+            //IF MULTIPLE CHOICE, THE VALUES ARE ACCUMULATED AND WRITTEN TO RESULT ARRAYS ON LAST EVENT IN ATTEMPT AT TASK
             if (
               (event.task_type == "multi_choice" ||
                 event.task_type == "ordinal" ||
@@ -250,7 +235,7 @@ export default class makeReport {
                   hit_targets[key] == event.num_targs_to_hit ? 1 : 0;
               }
             }
-
+            //POPULATE POINTS, SELECTIONS AND TIME ARRAYS FOR DISPLAY IN SHEETS
             this.tasks_points[task_key][att_key] = Array(
               taskname,
               attemptname,
@@ -274,7 +259,7 @@ export default class makeReport {
       this.tasks_time,
     ];
 
-    createTableWorkbook(tasks_sco_sel_tim, obj);
+    createTableWorkbook(tasks_sco_sel_tim);
 
     function cumm(sel_el) {
       let k_sep = "",
@@ -292,7 +277,7 @@ export default class makeReport {
     //*********************************************************** */
     //*********************************************************** */
 
-    function createTableWorkbook(tasks_sco_sel_tim, obj) {
+    function createTableWorkbook(tasks_sco_sel_tim) {
       var workbook = new $.ig.excel.Workbook(
         $.ig.excel.WorkbookFormat.excel2007
       );
@@ -300,13 +285,13 @@ export default class makeReport {
       sheets[0] = workbook.worksheets().add("Score");
       sheets[1] = workbook.worksheets().add("Selections");
       sheets[2] = workbook.worksheets().add("Time consumed");
-
+      //GO THROUGH EACH SHEET, POPULATE WITH SCORE, SELECTION AND TIME CONSUME FROM ARRAYS PRODUCED ABOVE
       for (var key in tasks_sco_sel_tim) {
         let tasks = tasks_sco_sel_tim[key];
 
         sheets[key].getCell("A1").value("Forsøk");
 
-        //number of columns depends on number of tasks
+        //ALLOCATE TABLE COLS AND ROWS FOR CONTENT
         var table = sheets[key].tables().add("A1:AZ70", true);
 
         // Specify the style to use in the table (this can also be specified as an optional 3rd argument to the 'add' call above).
@@ -316,35 +301,35 @@ export default class makeReport {
         let alfachar = "A";
         let att_id_txt;
 
-        //each tasks in horizontal (letter) columns
+        //EACH TASKS IN HORIZONTAL (letters A, B, C...) COLUMNS
         for (let task = 0; task < tasks.length; task++) {
           let attempts = tasks[task];
           if (attempts.length != 0) {
-            let first_row = true; //some tasks are not listed in taskreport (eg start_task)
-
-            //each task's attempts in vertical (number) rows
+            //EACH TASK'S ATTEMPTS IN VERTICAL (NUMBER) ROWS
             for (let att = 0; att < attempts.length; att++) {
               let task_attempt_values = attempts[att];
 
-              //add attempt name only in first column, and values in the next columns
+              //ADD ATTEMPT NAME ONLY IN FIRST COLUMN, AND VALUES IN THE NEXT COLUMNS
               if (task == 0) {
-                att_id_txt = attempts[att].split(":");
-                row_of_firstcol[att_id_txt[0]] = att;
-
-                sheets[key].getCell("A" + (att + 2)).value(att_id_txt[1]);
+                //MAKE SURE VALUES IN SAME ROW AS Forsøk (att), E.G. TASK VALUES OF F45 IS DISPLAYED IN ITS COLS
+                row_of_firstcol[attempts[att].split(":")[0]] = att;
+                sheets[key]
+                  .getCell("A" + (att + 2))
+                  .value(attempts[att].split(":")[1]);
               } else {
-                //add header cols with task names
-                if (first_row == true) {
+                //FIRST att TABLEROW IS HEADER WITH TASK NAMES
+                if (att == 0) {
                   sheets[key]
                     .columns(task)
                     .setWidth(72, $.ig.excel.WorksheetColumnWidthUnit.pixel);
-                  first_row = false;
-                  alfachar = nextChar(alfachar);
+                  alfachar = nextChar(alfachar); //GET NEXT COLUMN LETTER
                   sheets[key]
+                    //DISPLAY EACH COLUMN HEADER WITH TASK NAME
                     .getCell(alfachar + 1)
                     .value(task_attempt_values[0]);
                 }
 
+                //DISPLAY THE DIFFERENT ROWS IN RESPECTIVE Forsøk ROWS
                 sheets[key]
                   .getCell(
                     alfachar +
@@ -356,7 +341,7 @@ export default class makeReport {
           }
         }
 
-        // Sort the table by the Forsøk column
+        // SORT THE TABLE BY THE Forsøk COLUMN
         table
           .columns("Forsøk")
           .sortCondition(new $.ig.excel.OrderedSortCondition());
