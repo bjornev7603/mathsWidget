@@ -20,7 +20,7 @@ let svg;
 
 answerJsons.onchange = (inn) => {
   let jsonstreng = "";
-  let attemp_codes = [];
+  let attemp_ids = [];
   let chosen_files = inn.currentTarget.files;
 
   const promise1 = new Promise((resolve, reject) => {
@@ -28,13 +28,14 @@ answerJsons.onchange = (inn) => {
       (function (f, i) {
         var filereader = new FileReader();
 
-        if (!attemp_codes.includes(f.name.slice(5, 9))) {
-          attemp_codes[i] = f.name.slice(5, 9);
+        //extract attempt id from file name
+        if (!attemp_ids.includes(f.name.split(".")[0].slice(5))) {
+          attemp_ids[i] = f.name.split(".")[0].slice(5);
         }
 
         filereader.onloadend = function (e) {
           //console.log("filereader.onloaded: File: " + f.name + " index:" + i);
-          let sss = attemp_codes[i] != undefined ? attemp_codes[i] + ":" : "";
+          let sss = attemp_ids[i] != undefined ? attemp_ids[i] + ":" : "";
           jsonstreng +=
             sss +
             e.currentTarget.result

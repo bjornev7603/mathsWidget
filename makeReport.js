@@ -1,14 +1,8 @@
 export default class makeReport {
   constructor(answers = null) {
     //jsonify: add "[" and "]" to start and end, strip "," to end
-    let startfile_str = answers.match(/.*(?=,)?/);
-
-    let forsok_files = startfile_str[0].slice(0, -1);
-    answers =
-      "[" +
-      JSON.stringify(forsok_files) +
-      answers.slice(startfile_str[0].length - 1, -1) +
-      "]";
+    let forsok_files = answers.match(/.*(?=,)?/)[0].slice(0, -1);
+    answers = "[" + answers.slice(forsok_files.length + 1, -1) + "]";
 
     this.tasks_time = [];
     this.tasks_points = [];
@@ -25,15 +19,13 @@ export default class makeReport {
     tasks = JSON.parse(tasks);
 
     //loop TASKS -> ATTEMPTS -> ACTIONS
-    for (var task_key in tasks) {
-      let task = tasks[task_key];
+    for (var t_key in tasks) {
+      let task = tasks[t_key];
       let taskname = task.svgfile;
 
-      this.tasks_time[task_key] = task_key == 0 ? forsok_files.split(",") : [];
-      this.tasks_points[task_key] =
-        task_key == 0 ? forsok_files.split(",") : [];
-      this.tasks_sel_els[task_key] =
-        task_key == 0 ? forsok_files.split(",") : [];
+      this.tasks_time[t_key] = t_key == 0 ? forsok_files.split(",") : [];
+      this.tasks_points[t_key] = t_key == 0 ? forsok_files.split(",") : [];
+      this.tasks_sel_els[t_key] = t_key == 0 ? forsok_files.split(",") : [];
 
       //loop ATTEMPTS at each task
       for (var att_key in task.svgfile_group) {
@@ -196,7 +188,7 @@ export default class makeReport {
                 typeof event.time === "object" ? event.time[0] : event.time;
               //POPULATE POINTS, SELECTIONS AND TIME ARRAYS FOR DISPLAY IN SHEETS
               time_diff = (time_last - time_first) / 1000;
-              this.tasks_time[task_key][att_key] = Array(
+              this.tasks_time[t_key][att_key] = Array(
                 taskname,
                 attemptname,
                 time_diff
@@ -236,13 +228,13 @@ export default class makeReport {
               }
             }
             //POPULATE POINTS, SELECTIONS AND TIME ARRAYS FOR DISPLAY IN SHEETS
-            this.tasks_points[task_key][att_key] = Array(
+            this.tasks_points[t_key][att_key] = Array(
               taskname,
               attemptname,
               sel_points_hit > 0 ? sel_points_hit : sel_points
             );
 
-            this.tasks_sel_els[task_key][att_key] = Array(
+            this.tasks_sel_els[t_key][att_key] = Array(
               taskname,
               attemptname,
               (sel_el = Array.isArray(sel_el) ? cumm(sel_el) : sel_el)
@@ -333,7 +325,10 @@ export default class makeReport {
                 sheets[key]
                   .getCell(
                     alfachar +
-                      (row_of_firstcol[task_attempt_values[1].slice(5, 9)] + 2)
+                      (row_of_firstcol[
+                        task_attempt_values[1].split(".")[0].slice(5) //extract attempt id from file name in log
+                      ] +
+                        2)
                   )
                   .value(task_attempt_values[2]);
               }
