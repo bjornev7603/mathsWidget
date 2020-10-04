@@ -14,7 +14,6 @@ export default class makeReport {
     let time_first = 0,
       time_last = 0,
       time_diff = 0,
-      obj = {},
       tasks = groupArrayMain(answers, "svgfile", "a_file");
     tasks = JSON.parse(tasks);
 
@@ -66,7 +65,8 @@ export default class makeReport {
               (event.event == "not_hit" &&
                 (task.svgfile == "129_numberandquantity7.svg" ||
                   task.svgfile == "130_numberandquantity8.svg" ||
-                  task.svgfile == "139_quantitydiscrimination7.svg"))
+                  task.svgfile == "139_quantitydiscrimination7.svg" ||
+                  task.svgfile == "089_Estimation10.svg"))
             ) {
               sel_points =
                 event.sel_points != null &&
@@ -80,6 +80,11 @@ export default class makeReport {
                 sel_el = event.s_val + ";" + event.target_val;
               } else {
                 sel_el = event.s_val;
+              }
+
+              if (task.svgfile == "089_Estimation10.svg") {
+                let tot_x = event.x + 503;
+                sel_el = tot_x + ": " + (tot_x / (1237 - 128)) * 100 + "%";
               }
 
               //no values in quantity tasks, use id as value for sel_id instead
@@ -191,7 +196,9 @@ export default class makeReport {
               this.tasks_time[t_key][att_key] = Array(
                 taskname,
                 attemptname,
-                time_diff
+                time_diff,
+                time_first,
+                time_last
               );
             }
 
@@ -282,6 +289,7 @@ export default class makeReport {
         let tasks = tasks_sco_sel_tim[key];
 
         sheets[key].getCell("A1").value("Forsøk");
+        if (key == 2) sheets[key].getCell("B1").value("Tidsrom");
 
         //ALLOCATE TABLE COLS AND ROWS FOR CONTENT
         var table = sheets[key].tables().add("A1:AZ70", true);
@@ -291,23 +299,58 @@ export default class makeReport {
 
         let row_of_firstcol = {};
         let alfachar = "A";
-        let att_id_txt;
+        let started = [];
+        let ended = [];
 
         //EACH TASKS IN HORIZONTAL (letters A, B, C...) COLUMNS
         for (let task = 0; task < tasks.length; task++) {
           let attempts = tasks[task];
+
           if (attempts.length != 0) {
             //EACH TASK'S ATTEMPTS IN VERTICAL (NUMBER) ROWS
             for (let att = 0; att < attempts.length; att++) {
               let task_attempt_values = attempts[att];
 
+              //IF TIME SHEET -> ADD START AND END TIME OF ATTEMPT
+              if (key == 2 && task_attempt_values[4] != undefined) {
+                //GET EARLIEST START AND LATEST END TIME
+                if (task > 0) {
+                  if (
+                    task_attempt_values[3] < started[att] ||
+                    started[att] == undefined
+                  ) {
+                    started[att] = task_attempt_values[3];
+                  }
+                  if (
+                    task_attempt_values[3] > started[att] ||
+                    ended[att] == undefined
+                  ) {
+                    ended[att] = task_attempt_values[4];
+                  }
+                }
+
+                if (task == tasks.length - 1) {
+                  //DISPLAY START AND END TIME OF ATTEMPT
+                  let date = new Date(started[att]).toISOString().slice(0, 10);
+                  let start = new Date(started[att])
+                    .toISOString()
+                    .slice(11, -5);
+
+                  let end = new Date(ended[att]).toISOString().slice(11, -5);
+                  sheets[key]
+                    .getCell("B" + (att + 2))
+                    .value(date + " " + start + "-" + end);
+                }
+              }
               //ADD ATTEMPT NAME ONLY IN FIRST COLUMN, AND VALUES IN THE NEXT COLUMNS
               if (task == 0) {
                 //MAKE SURE VALUES IN SAME ROW AS Forsøk (att), E.G. TASK VALUES OF F45 IS DISPLAYED IN ITS COLS
                 row_of_firstcol[attempts[att].split(":")[0]] = att;
+                alfachar = "A";
                 sheets[key]
-                  .getCell("A" + (att + 2))
+                  .getCell(alfachar + (att + 2))
                   .value(attempts[att].split(":")[1]);
+                alfachar = nextChar(alfachar); //GET NEXT COLUMN LETTER
               } else {
                 //FIRST att TABLEROW IS HEADER WITH TASK NAMES
                 if (att == 0) {
