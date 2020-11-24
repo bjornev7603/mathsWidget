@@ -21,6 +21,9 @@ let svg;
 answerJsons.onchange = (inn) => {
   let jsonstreng = "";
   let attemp_ids = [];
+  let task_ids = [];
+  let sss = ""
+
   let chosen_files = inn.currentTarget.files;
 
   const promise1 = new Promise((resolve, reject) => {
@@ -28,27 +31,48 @@ answerJsons.onchange = (inn) => {
       (function (f, i) {
         var filereader = new FileReader();
 
-        //extract attempt id from file name
-        if (!attemp_ids.includes(f.name.split(".")[0].slice(5))) {
-          attemp_ids[i] = f.name.split(".")[0].slice(5);
-        }
+        
+        
+      
+
+
 
         filereader.onloadend = function (e) {
           //console.log("filereader.onloaded: File: " + f.name + " index:" + i);
-          let sss = attemp_ids[i] != undefined ? attemp_ids[i] + ":" : "";
-          jsonstreng +=
-            sss +
-            e.currentTarget.result
-              .trim()
-              .slice(1, -1)
-              .replace(
-                /"tdiff": ""|"tdiff": null|"tdiff": "NaN"/g,
-                '"a_file": "' + chosen_files[i].name + '"'
-              ) +
-            ",";
+
+          //extract attempt id from file name        
+          //legger bare inn nye attemptid'er (unngår dobbletgjengere) 
+          if (!attemp_ids.includes(f.name.split(".")[0].slice(5))) { 
+            task_ids[i] = f.name.split("-")[0];        
+                    //hvis førsteside (task1: forsøknavn input) hentes attemptnavn
+            if  (task_ids.length == 0 || f.name.split("-")[0] == task_ids[0]) {
+              attemp_ids[i] = f.name.split(".")[0].slice(5) 
+              sss +=  attemp_ids[i] + ":" + e.currentTarget.result + ",";              
+            } else { //ellers hentes unike attemptid'er med dato
+              attemp_ids[i] = f.name.split(".")[0].slice(5);               
+              
+              //fetch date and time from first matisktikk event
+              let timex = new Date(JSON.parse(e.currentTarget.result)[0].time).toISOString()
+              let att_time = timex.slice(0, 10) + " " + timex.slice(11, 19)
+              sss +=  attemp_ids[i] + ":" + "\"" + att_time +"\"" + ",";
+            }
+            
+          }
+          if  (task_ids.length > 0 && f.name.split("-")[0] != task_ids[0]) {
+            jsonstreng +=            
+              e.currentTarget.result
+                .trim()
+                .slice(1, -1)
+                .replace(
+                  /"tdiff": ""|"tdiff": null|"tdiff": "NaN"/g,
+                  '"a_file": "' + chosen_files[i].name + '"'
+                ) +
+              ",";
+          }
+          
 
           if (i == chosen_files.length - 1) {
-            resolve(jsonstreng);
+            resolve(sss + jsonstreng);
           }
         };
         filereader.readAsText(f);

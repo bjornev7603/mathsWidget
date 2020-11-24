@@ -21,10 +21,10 @@ export default class makeReport {
     for (var t_key in tasks) {
       let task = tasks[t_key];
       let taskname = task.svgfile;
-
-      this.tasks_time[t_key] = t_key == 0 ? forsok_files.split(",") : [];
-      this.tasks_points[t_key] = t_key == 0 ? forsok_files.split(",") : [];
-      this.tasks_sel_els[t_key] = t_key == 0 ? forsok_files.split(",") : [];
+      let tp = forsok_files.replaceAll("\"", "").split(",")
+      this.tasks_time[t_key] = t_key == 0 ? tp : [];
+      this.tasks_points[t_key] = t_key == 0 ? tp : [];
+      this.tasks_sel_els[t_key] = t_key == 0 ? tp : [];
 
       //loop ATTEMPTS at each task
       for (var att_key in task.svgfile_group) {
@@ -292,7 +292,7 @@ export default class makeReport {
         if (key == 2) sheets[key].getCell("B1").value("Tidsrom");
 
         //ALLOCATE TABLE COLS AND ROWS FOR CONTENT
-        var table = sheets[key].tables().add("A1:AZ70", true);
+        var table = sheets[key].tables().add("A1:AZ100", true);
 
         // Specify the style to use in the table (this can also be specified as an optional 3rd argument to the 'add' call above).
         table.style(workbook.standardTableStyles("TableStyleMedium2"));
