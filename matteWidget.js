@@ -62,9 +62,7 @@ export default class MatteWidget {
     this.size_src_obj = 0; //reset size of object when replaying
     this.already_replay = false; //checks if new replay
     this.x_offset = [];
-    this.y_offset = [];
-    this.x_offset_diff = [];
-    this.y_offset_diff = [];
+    this.y_offset = [];    
     this.init_mx_a = [];
     this.init_mx_b = [];
     this.init_mx_c = [];
@@ -284,18 +282,18 @@ export default class MatteWidget {
           //  this.selected_class = "in_color";
         }
       }
-    }
-
-    let src_el = "{g}";
+    }    
     let lg_moved_obj = [];
     let lg_times = [];
+
     //select nodes from svg file
     let all_src = SVG().select(".source").members;
 
     //Reset moving object (source)
 
     //Loop all source objects
-    for (let src_el of all_src) {
+    for (let src_el of all_src) {      
+
       //Loop all log elements
       for (let lg_el = 0; lg_el < lg.length; lg_el++) {
         //add string to start of node id if it start with integer in svg nodetree
@@ -329,31 +327,17 @@ export default class MatteWidget {
             let x_val = typeof lg === "object" ? lg[lg_el].x[0] : lg.x[0];
             let y_val = typeof lg === "object" ? lg[lg_el].y[0] : lg.y[0];
 
-            //deactivate default distortion adjustments for now
-            //x_val = 600;
-            //y_val = 600;
-
-            //diff x
-            if (log_objid in this.x_offset_diff == false) {
-              this.x_offset[log_objid] =
-                svg_obj.node.transform.animVal[0].matrix["e"];
-              this.x_offset_diff[log_objid] = this.x_offset[log_objid] - x_val;
-            }
-
-            //diff y
-            if (log_objid in this.y_offset_diff == false) {
-              this.y_offset[log_objid] =
-                svg_obj.node.transform.animVal[0].matrix["f"];
-              this.y_offset_diff[log_objid] = this.y_offset[log_objid] - y_val;
-            }
+             //diff x            
+              this.x_offset[log_objid] = svg_obj.node.transform.animVal[0].matrix["e"];
+            
+            //diff y            
+              this.y_offset[log_objid] = svg_obj.node.transform.animVal[0].matrix["f"];
           }
-
-          let srcid = src_el.node.id;
           if (
             lg_moved_obj.includes("gr" + log_objid) == false &&
             lg_times.includes(lg[lg_el].time[0]) == false
           ) {
-            lg_moved_obj.push("gr" + log_objid);
+             lg_moved_obj.push("gr" + log_objid);
             lg_times.push(lg[lg_el].time[0]);
 
             //
@@ -361,6 +345,7 @@ export default class MatteWidget {
               src_el.node.setAttribute("id", "gr" + log_objid);
             }
 
+            //get from svg object if not saved in init_mx
             if (log_objid in this.init_mx_a == false) {
               this.init_mx_a[log_objid] =
                 src_el.node.transform.animVal[0].matrix["a"];
@@ -371,8 +356,7 @@ export default class MatteWidget {
               this.init_mx_d[log_objid] =
                 src_el.node.transform.animVal[0].matrix["d"];
             }
-
-            src_el.node.setAttribute(
+               src_el.node.setAttribute(
               "transform",
               "matrix(" +
                 this.init_mx_a[log_objid] +
@@ -382,12 +366,12 @@ export default class MatteWidget {
                 this.init_mx_c[log_objid] +
                 "," +
                 this.init_mx_d[log_objid] +
-                "," +
-                (src_el.node._gsTransform.x + this.x_offset_diff[log_objid]) +
-                "," +
-                (src_el.node._gsTransform.y + this.y_offset_diff[log_objid]) +
-                ")"
-            );
+                "," +                
+                src_el.node._gsTransform.x +                
+                "," + 
+                src_el.node._gsTransform.y +                
+                ")" 
+            );  
 
             src_el.node.style.opacity = 1;
           }
@@ -446,7 +430,7 @@ export default class MatteWidget {
     switch (logg.event) {
       case "move":
         if (typeof logg.x === "object") {
-          logg.x.forEach((pos, index) => {
+          logg.x.forEach((posi, index) => {
             let interval = 50; //msec
             setTimeout(
               () => {
@@ -456,15 +440,22 @@ export default class MatteWidget {
                     : 0;
                 let pos_x =
                   index > 0
-                    ? logg.x[index] + this.x_offset_diff[logg.src_id]
+                    ? logg.x[index]
                     : this.x_offset[logg.src_id];
 
                 let pos_y =
                   index > 0
-                    ? +(logg.y[index] + this.y_offset_diff[logg.src_id])
+                  ? logg.y[index]
                     : this.y_offset[logg.src_id];
 
+                   
+
                 let nd_mx = svg_obj.node.transform.animVal[0].matrix;
+
+               //set matrix with x and y offset values                
+                let xp = (pos_x == 0) && nd_mx != undefined && nd_mx["e"] != undefined  ? nd_mx["e"] : pos_x
+                let yp = (pos_y == 0) && nd_mx != undefined  && nd_mx["f"] != undefined? nd_mx["f"] : pos_y 
+                
                 svg_obj.node.setAttribute(
                   "transform",
                   "matrix(" +
@@ -476,12 +467,13 @@ export default class MatteWidget {
                     "," +
                     nd_mx["d"] +
                     "," +
-                    pos_x +
+                    xp +
                     "," +
-                    pos_y +
+                    yp +
                     ")"
                 );
               },
+
               index < logg.x.length && index == 1000 //comment last cond to apply logtime
                 ? (logg.time[index + 1] - logg.time[index]) * index * 10
                 : interval * index
