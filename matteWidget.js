@@ -38,6 +38,22 @@ export default class MatteWidget {
 
     this.instruction_already_spoken = false;
 
+    //start index of states for replay modul
+    this.ini_idx = 0
+
+    //indicated if restarted from last event in playback. If restarted -> only reset_svg(), no replay
+    this.restarted = true
+
+    this.view_endstate = false
+
+    this.index = 0
+     
+    this.skip_to_start = "mdi-skip-backward"
+    this.skip_to_end = "mdi-skip-forward"
+    this.play_next = "mdi-play"
+    this.play_previous = "mdi-rewind"
+
+
     //get svg from upload file and save this to window.name,
     //otherwise fetch uploaded svg object stored i window.name
     if (options && options.svg != null && options.svg != false) {
@@ -204,41 +220,46 @@ export default class MatteWidget {
     };
     //if playback mode and there is log data (answer) to emulate
     if (this.answer.length) {
-      this.buildPlayback();
-      let skip = false;
+      this.answer.shift()
       this.state = {
         //Initial state
-        nextevent: this.answer[0].event,
-        current: 0,
-        forward: () => {
-          let skip = false;
-
-          if (this.state.current + 1 < this.answer.length) {
-            let t1 = this.answer[this.state.current];
-            t1 = typeof t1.time === "object" ? t1.time[0] : t1.time;
-            let t2 = this.answer[this.state.current + 1];
-            t2 = typeof t2.time === "object" ? t2.time[0] : t2.time;
-            if (t1 == t2) {
-              //signal to step over index if move and odd number -> duplicate move
-              skip = true;
-            }
-          }
-
+        nextevent: this.answer[this.ini_idx].event,
+        prevevent: this.answer[this.ini_idx].event,
+        current: this.ini_idx,        
+        rev_play: false,
+        forward: (e) => {       
           //next action and index (augmented below)
           let action = this.state.nextevent;
-          let index = this.state.current;
-
-          if (skip) this.state.current++;
-
+          let index = this.state.current;                    
+          
+          let btn_class = e.srcElement.firstChild == null? e.srcElement: e.srcElement.firstChild;
+          //if second button is forward play->increase state by 1, else if button is skip to start->set state to 0
           this.state.current =
-            this.state.current != this.answer.length
-              ? (this.state.current + 1) % this.answer.length
-              : 0;
-          this.state.nextevent = this.answer[this.state.current].event;
+            (!btn_class.className.contains(this.skip_to_start)) 
+                ? ( (this.state.current + 1 ) % this.answer.length )
+                : this.ini_idx;
 
-          return { action: action, index: index, skip: skip };
+          this.state.nextevent = this.answer[this.state.current].event;        
+
+          return { action: action, index: index };
         },
+        //"back" BUTTON || "skip forward" BUTTON clicked
+        back: (e) => {
+          let action = this.state.prevevent;
+          let index = this.state.current;          
+
+          if(e.target.className.contains(this.skip_to_end)) {
+            this.state.current = this.ini_idx            
+          } else {
+            //reduced position by 1 (if not 0)
+            this.state.current = this.state.current == this.ini_idx? (this.answer.length - 1): this.state.current - 1;
+          }
+          this.state.prevevent = this.answer[this.state.current].event;
+
+          return { action: action, index: index};
+        }
       };
+      this.buildPlayback();
     } else {
       this.show_msg("This log is empty");
     }
@@ -292,7 +313,7 @@ export default class MatteWidget {
     //Reset moving object (source)
 
     //Loop all source objects
-    for (let src_el of all_src) {      
+    for (let src_el of all_src) {     
 
       //Loop all log elements
       for (let lg_el = 0; lg_el < lg.length; lg_el++) {
@@ -412,110 +433,122 @@ export default class MatteWidget {
   //******************************************************************* */
   //PLAYBACK: Main logic for emulating log event through svg actions
   replay_svg(arg) {
-    if (arg == 0) this.reset_svg(arg, this.answer);
-
-    var svg_pricks = SVG.select(".disappear").members;
-    for (var i = 0; i < svg_pricks.length; i++) {
-      svg_pricks[i].node.classList.toggle("disappear", false);
-      svg_pricks[i].node.classList.toggle("re-appear", true);
+    if (arg == this.ini_idx && this.index != 1) { 
+      this.reset_svg(arg, this.answer);
+      this.index = 1
     }
 
-    let logg = this.answer[arg];
-    //Select specific svg node element that corresponds to log row
-    logg.src_id = this.is_numeric(logg.src_id[0])
-      ? "gr" + logg.src_id
-      : logg.src_id;
-    let svg_obj = SVG().select("#" + logg.src_id).members[0];
+    if(this.restarted == false) {
 
-    switch (logg.event) {
-      case "move":
-        if (typeof logg.x === "object") {
-          logg.x.forEach((posi, index) => {
-            let interval = 50; //msec
-            setTimeout(
-              () => {
-                interval =
-                  index < logg.x.length
-                    ? logg.time[index + 1] - logg.time[index]
-                    : 0;
-                let pos_x =
-                  index > 0
-                    ? logg.x[index]
-                    : this.x_offset[logg.src_id];
+      var svg_pricks = SVG.select(".disappear").members;
+      for (var i = 0; i < svg_pricks.length; i++) {
+        svg_pricks[i].node.classList.toggle("disappear", false);
+        svg_pricks[i].node.classList.toggle("re-appear", true);
+      }
 
-                let pos_y =
-                  index > 0
-                  ? logg.y[index]
-                    : this.y_offset[logg.src_id];
+      let logg = this.answer[arg];
+      //Select specific svg node element that corresponds to log row
+      logg.src_id = this.is_numeric(logg.src_id[0])
+        ? "gr" + logg.src_id
+        : logg.src_id;
+      let svg_obj = SVG().select("#" + logg.src_id).members[0];
 
-                   
+      switch (logg.event) {
+        case "move":
+          if (typeof logg.x === "object") {
+            let rev_x = logg.x.slice();
+            let rev_y = logg.y.slice();
+            if(this.state.rev_play) { 
+              rev_x.reverse();
+              rev_y.reverse();
+            }
+            rev_x.forEach((posi, index) => {
+              let interval = 50; //msec
+              setTimeout(
+                () => {
+                  interval =
+                    index < rev_x.length
+                      ? logg.time[index + 1] - logg.time[index]
+                      : 0;
+                  let pos_x =
+                    index > 0
+                      ? rev_x[index]
+                      : this.x_offset[logg.src_id];
 
-                let nd_mx = svg_obj.node.transform.animVal[0].matrix;
+                  let pos_y =
+                    index > 0
+                    ? rev_y[index]
+                      : this.y_offset[logg.src_id];
 
-               //set matrix with x and y offset values                
-                let xp = (pos_x == 0) && nd_mx != undefined && nd_mx["e"] != undefined  ? nd_mx["e"] : pos_x
-                let yp = (pos_y == 0) && nd_mx != undefined  && nd_mx["f"] != undefined? nd_mx["f"] : pos_y 
-                
-                svg_obj.node.setAttribute(
-                  "transform",
-                  "matrix(" +
-                    nd_mx["a"] +
-                    "," +
-                    nd_mx["b"] +
-                    "," +
-                    nd_mx["c"] +
-                    "," +
-                    nd_mx["d"] +
-                    "," +
-                    xp +
-                    "," +
-                    yp +
-                    ")"
-                );
-              },
+                    
 
-              index < logg.x.length && index == 1000 //comment last cond to apply logtime
-                ? (logg.time[index + 1] - logg.time[index]) * index * 10
-                : interval * index
-            );
-          });
-        }
-        break;
+                  let nd_mx = svg_obj.node.transform.animVal[0].matrix;
 
-      case "hit":
-        var t = logg.x * 0.94 + " " + logg.y * 0.91;
-        let prefix = "";
-        prefix = this.is_numeric(logg.src_id[0]) ? "#gr" : "#";
-
-        let svg_ele = SVG().select(prefix + logg.src_id).members[0];
-        if (SVG().select(".target.eat").members.length > 0) {
-          TweenLite.to(svg_ele, 0.1, {
-            opacity: 0,
-            scale: 0,
-            svgOrigin: t,
-          });
-        } else {
-          svg_ele.node.style.opacity = "0.66";
-        }
-        break;
-      case "select_click":
-      case "timer_click":
-      case "next_click":
-      case "info_click":
-        var memb = document.querySelectorAll(
-          ".select, .start_timer, .next, .info"
-        );
-        if (memb.length > 0) {
-          for (var j = 0; j < memb.length; j++) {
-            memb[j].classList.toggle(this.selected_class, false);
-            memb[j].classList.toggle("unframed", false);
+                //set matrix with x and y offset values                
+                  let xp = (pos_x == 0) && nd_mx != undefined && nd_mx["e"] != undefined  ? nd_mx["e"] : pos_x
+                  let yp = (pos_y == 0) && nd_mx != undefined  && nd_mx["f"] != undefined? nd_mx["f"] : pos_y 
+                  
+                  svg_obj.node.setAttribute(
+                    "transform",
+                    "matrix(" +
+                      nd_mx["a"] +
+                      "," +
+                      nd_mx["b"] +
+                      "," +
+                      nd_mx["c"] +
+                      "," +
+                      nd_mx["d"] +
+                      "," +
+                      xp +
+                      "," +
+                      yp +
+                      ")"
+                  );
+                },
+                (this.view_endstate)? 1: 
+                 (index < rev_x.length && index == 1000 //comment last cond to apply logtime
+                  ? (logg.time[index + 1] - logg.time[index]) * index * 10
+                  : interval * index)
+              );
+            });
           }
-        }
+          break;
 
-        let svg_sel_el = SVG().select("#" + logg.src_id).members[0].node;
-        svg_sel_el.classList.toggle(this.selected_class, true);
+        case "hit":
+          var t = logg.x * 0.94 + " " + logg.y * 0.91;
+          let prefix = "";
+          prefix = this.is_numeric(logg.src_id[0]) ? "#gr" : "#";
+
+          let svg_ele = SVG().select(prefix + logg.src_id).members[0];
+          if (SVG().select(".target.eat").members.length > 0) {
+            TweenLite.to(svg_ele, 0.1, {
+              opacity: 0,
+              scale: 0,
+              svgOrigin: t,
+            });
+          } else {
+            svg_ele.node.style.opacity = "0.66";
+          }
+          break;
+        case "select_click":
+        /* case "timer_click":
+        case "next_click":
+        case "info_click": */
+          var memb = document.querySelectorAll(
+            ".select, .start_timer, .next, .info"
+          );
+          if (memb.length > 0) {
+            for (var j = 0; j < memb.length; j++) {
+               memb[j].classList.toggle(this.selected_class, false);
+              memb[j].classList.toggle("unframed", false);
+            }
+          }
+
+          let svg_sel_el = SVG().select("#" + logg.src_id).members[0].node;
+          svg_sel_el.classList.toggle(this.selected_class, true);
 
         break;
+      }
     }
   }
 
@@ -539,38 +572,102 @@ export default class MatteWidget {
     menuDivElement.classList.add("drawing-playback-container");
 
     const ControlDivElement = document.createElement("div");
-    ControlDivElement.classList.add("drawing-playback-container");
+    ControlDivElement.classList.add("drawing-playback-container");    
 
+    let actions = [{}]
     //navigating between answers (states)
-    const actions = [
+    actions[0] = 
       {
-        name: "",
-        handler: () => {
+        index: this.state.current,
+        name: "forward",
+        handler: (e) => {
+          this.state.rev_play = false;
+          this.view_endstate = false;
           let toggle = false;
-          let { action, index, skip } = this.state.forward();
-          if (
-            index == this.answer.length - 1 ||
-            (index == this.answer.length - 2 && skip)
-          )
+          let { action, index } = this.state.forward(e);
+          if (index == this.answer.length - 1) { 
             toggle = true;
-          //if (index == 0) this.eventHandlers.CLEAR_ANIMATIONS();
-          this.eventHandlers[action](index);
+          }   
+          //if direct backward from last event
+          let div_bck = document.getElementById("backward");
+          let btn_class = e.srcElement.firstChild == null? e.srcElement: e.srcElement.firstChild;
+          if(btn_class.className.contains(this.skip_to_start) && div_bck.firstElementChild.classList.contains(this.play_previous) ) {
+            this.restarted = true
+          }  else {
+            this.restarted = false
+          }
+          
+          if (index == this.ini_idx) {
+            //toggle skip_forward/rewind button when navigating to/from first element
+            div_bck.firstElementChild.classList.remove( (this.state.current == 1)? this.skip_to_end: this.play_previous )
+            div_bck.firstElementChild.classList.add( (this.state.current == 1)? this.play_previous: this.skip_to_end )
+          }
+
+          this.index = index;
+          this.eventHandlers[action](index);         
+
           return toggle;
-        },
-        icon: "mdi-skip-next",
-        reset_icon: "mdi-skip-backward",
-      },
-    ];
-    for (let tool of actions) {
+        },       
+        
+        icon: this.play_next,                
+        reset_icon: this.skip_to_start,
+      }
+    
+     actions[1] = 
+      {
+        index: this.state.current,        
+
+        name: "backward",
+        handler: (e) => {
+          let toggle = false;  
+          this.view_endstate = false;        
+          let div_forw = document.getElementById("forward");
+          let { action, index} = this.state.back(e);           
+                   
+          //IF PRESSED "skip to end" BUTTON, ALWAYS TOGGLE TO SHOW THE "previous" BUTTON, AND ALWAYS SHOW ADJECENT "skip back to start" BUTTON
+          if (e.target.classList.contains(this.skip_to_end) ){           
+            div_forw.firstElementChild.classList.remove(this.play_next)
+            div_forw.firstElementChild.classList.add(this.skip_to_start)
+            toggle = true   
+            this.restarted = false //playback must be false in order to play (when back to start restarted = true -> no play)
+            this.view_endstate = true
+            this.state.rev_play = false;
+            for(let i=0; i<this.answer.length; i++) {
+              this.eventHandlers[this.answer[i].event](i);
+            }                        
+
+          //IF PRESSED "previous" BUTTON, ONLY TOGGLE IF FIRST ELEMENT IS REACHED, AND ALWAYS SHOW ADJECENT "play next" BUTTON
+          } else {                   
+            toggle = (index > this.ini_idx + 1)? true: false
+
+            if(div_forw.firstElementChild.classList.contains(this.skip_to_start) ) {
+              div_forw.firstElementChild.classList.remove(this.skip_to_start)
+              div_forw.firstElementChild.classList.add(this.play_next)       
+              toggle = true
+            }            
+            this.index = index //for resetting playback or not
+            this.state.rev_play = true;
+            this.eventHandlers[action](this.state.current );
+          }
+          return toggle;
+        },  
+        icon: this.skip_to_end,                
+        reset_icon: this.play_previous,
+      }
+    ; 
+    for (let tool of actions) {      
       let div = document.createElement("div");
+      div.id = tool.name
       div.classList.add("playback-tool");
       // div.style.backgroundColor = '#000'
       let i = document.createElement("i");
       i.classList.add("mdi", tool.icon);
       div.append(i);
       ControlDivElement.append(div);
-      div.addEventListener("click", () => {
-        let toggle = tool.handler();
+      
+      div.addEventListener("click", (e) => {
+        let toggle = tool.handler(e);          
+
         if (toggle) {
           i.classList.remove(tool.icon);
           i.classList.add(tool.reset_icon);
@@ -578,7 +675,7 @@ export default class MatteWidget {
           i.classList.remove(tool.reset_icon);
           i.classList.add(tool.icon);
         }
-      });
+      });      
     }
     const divEl = document.getElementById(this.divElementId);
     menuDivElement.append(ControlDivElement);
