@@ -38,21 +38,17 @@ export default class MatteWidget {
 
     this.instruction_already_spoken = false;
 
-    //start index of states for replay modul
-    this.ini_idx = 0
-
     //indicated if restarted from last event in playback. If restarted -> only reset_svg(), no replay
-    this.restarted = true
+    this.restarted = true;
 
-    this.view_endstate = false
+    this.view_endstate = false;
 
-    this.index = 0
-     
-    this.skip_to_start = "mdi-skip-backward"
-    this.skip_to_end = "mdi-skip-forward"
-    this.play_next = "mdi-play"
-    this.play_previous = "mdi-rewind"
+    this.index = 0;
 
+    this.skip_to_start = "mdi-skip-backward";
+    this.skip_to_end = "mdi-skip-forward";
+    this.play_next = "mdi-play";
+    this.play_previous = "mdi-rewind";
 
     //get svg from upload file and save this to window.name,
     //otherwise fetch uploaded svg object stored i window.name
@@ -78,7 +74,7 @@ export default class MatteWidget {
     this.size_src_obj = 0; //reset size of object when replaying
     this.already_replay = false; //checks if new replay
     this.x_offset = [];
-    this.y_offset = [];    
+    this.y_offset = [];
     this.init_mx_a = [];
     this.init_mx_b = [];
     this.init_mx_c = [];
@@ -104,6 +100,15 @@ export default class MatteWidget {
     this.countdown_msec = 10000;
     this.timeout_msec = 3000;
 
+    this.diff_level = 1;
+    if (window.diff_level == undefined) {
+      window.diff_level = this.diff_level;
+    } else {
+      this.diff_level = window.diff_level;
+    }
+
+    this.ran_0_2 = this.getRandomInt(0, 3);
+
     this.vars = {};
 
     this.answer = answer || [];
@@ -117,10 +122,16 @@ export default class MatteWidget {
 
     //
     if (this.svg == null || this.svg == 1) {
-      fetch(this.svg == null ? this.config.svgUrl : this.svg, {
-        method: "GET",
-        mode: "no-cors",
-      })
+      //fetch(this.svg == null ? this.config.svgUrl : this.svg, {
+      fetch(
+        this.svg == null
+          ? this.config.svgdir + this.get_task_from_level(this.diff_level)
+          : this.svg,
+        {
+          method: "GET",
+          mode: "no-cors",
+        }
+      )
         .then((resp) => resp.text())
         .then((svgl) => {
           this.parseSVG(svgl);
@@ -136,6 +147,236 @@ export default class MatteWidget {
     }
 
     //SVG event handlers
+  }
+
+  getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+  }
+
+  get_task_from_level(d_level) {
+    let task = "0";
+    switch (d_level) {
+      case 1:
+        task = this.config.level1[this.ran_0_2];
+        break;
+      case 2:
+        task = this.config.level2[this.ran_0_2];
+        break;
+      case 3:
+        task = this.config.level3[this.ran_0_2];
+        break;
+      case 4:
+        task = this.config.level4[this.ran_0_2];
+        break;
+    }
+    return task;
+  }
+
+  calculate_points(events) {
+    this.tasks_points = [];
+    this.tasks_points[0] = [];
+    let sel_points = 0;
+    let sel_points_hit = "";
+    let sel_el = "";
+    let sel_acc_points = 0;
+    let sel_acc_els = [];
+    let hit_els = [];
+    let hit_targets = [];
+    let hit_trg_src = [];
+    let ball_count = 0;
+    //time_first = time_last = time_diff = 0;
+    for (var ev_key in events) {
+      let event = events[ev_key];
+      //let events = attempt.a_file_group;
+
+      if (
+        event.task_type == "single_choice" ||
+        event.task_type == "multi_choice" ||
+        event.task_type == "single_choice_hit" ||
+        event.task_type == "ordinal" ||
+        event.task_type == "quantity" ||
+        event.task_type == "dice_sum"
+      ) {
+        /* if (ev_key == 0) {
+          time_first =
+            typeof event.time === "object" ? event.time[0] : event.time;
+        } */
+
+        if (
+          event.event == "select_click" ||
+          event.event == "hit" ||
+          (event.event == "not_hit" &&
+            (event.svgfile == "129_numberandquantity7.svg" ||
+              event.svgfile == "130_numberandquantity8.svg" ||
+              event.svgfile == "139_quantitydiscrimination7.svg" ||
+              event.svgfile == "089_Estimation10.svg"))
+        ) {
+          sel_points =
+            event.sel_points != null &&
+            typeof Number(event.sel_points) === "number"
+              ? Number(event.sel_points)
+              : 0;
+          //sel_el = event.event == "hit" ? event.target_val : event.s_val;
+
+          //if we also want to know the wrong target elements selected
+          if (event.task_type == "ordinalx") {
+            sel_el = event.s_val + ";" + event.target_val;
+          } else {
+            sel_el = event.s_val;
+          }
+
+          if (event.svgfile == "089_Estimation10.svg") {
+            let tot_x = event.x + 503;
+            //start position of source is 503px, eventx is relative to this,
+            //so add this to the absolute x-values of targets (0 and 10)
+            sel_el = /* tot_x + ": " + */ (tot_x / (1237 - 5)) * 10;
+          }
+
+          //no values in quantity tasks, use id as value for sel_id instead
+          if (event.task_type == "quantity") {
+            sel_el = event.src_id;
+          }
+          sel_acc_points = sel_acc_points + sel_points;
+
+          sel_acc_els[event.src_id] = sel_el + "|" + event.sel_points;
+
+          if (event.task_type == "single_choice_hit" && event.event == "hit") {
+            if (sel_el == event.target_val) {
+              sel_points_hit = 1;
+            } else sel_points_hit = 0;
+            //actual target id is diplayed in report
+            sel_el = event.target_val;
+          }
+
+          if (event.task_type == "ordinal") {
+            if (sel_el == event.target_val) {
+              if (
+                hit_els[event.src_id] == null ||
+                hit_els[event.src_id] == false
+              ) {
+                ball_count++;
+                hit_els[event.src_id] = true;
+              }
+            } else {
+              //if (ball_count > 0 && hit_els[event.src_id] == true) {
+              if (hit_els[event.src_id] != null) {
+                ball_count--;
+                delete hit_els[event.src_id];
+                //hit_els[event.src_id] = false;
+              }
+            }
+          }
+          //IF task of quantity (eg count ball hit target),
+          //AND this ball is not registered as in target
+          // -> increase ball count
+          if (event.task_type == "quantity") {
+            if (hit_els[event.src_id] == null) {
+              ball_count++;
+              hit_els[event.src_id] = true;
+            }
+          }
+
+          //IF task of dicesum (eg dice hit target),
+          //AND this ball is not registered as in target
+          // -> increase ball count
+          if (event.task_type == "dice_sum") {
+            hit_trg_src[event.src_id] =
+              hit_trg_src[event.target_id] != undefined
+                ? event.target_id +
+                  "|" +
+                  (parseInt(hit_trg_src[event.target_id]) +
+                    parseInt(event.s_val))
+                : event.target_id + "|" + parseInt(event.s_val);
+          }
+        }
+        if (event.event == "de-select_click") {
+          let val_point = sel_acc_els[event.src_id].split("|");
+          if (val_point[1] == "1") {
+            sel_acc_points = sel_acc_points - 1;
+          }
+          if (sel_acc_els[event.src_id] != null) {
+            delete sel_acc_els[event.src_id];
+          }
+          //remove element from sel_acc_els[src_id]
+        }
+        if (
+          event.event == "not_hit" &&
+          event.svgfile != "129_numberandquantity7.svg" &&
+          event.svgfile != "130_numberandquantity8.svg" &&
+          event.svgfile != "139_quantitydiscrimination7.svg"
+        ) {
+          //if a ball hit from a specific source ball exists and this is involved in not_hit event, delete it
+          if (hit_els[event.src_id] != null) {
+            delete hit_els[event.src_id];
+            ball_count--;
+          }
+          //if dice task and a specific target has a dice removed from its surface, remove the dice points of this target's actual dice points
+          if (
+            event.task_type == "dice_sum" &&
+            hit_trg_src[event.src_id] != undefined
+          ) {
+            delete hit_trg_src[event.src_id];
+          }
+        }
+
+        if (ev_key == events.length - 1) {
+          if (event.task_type == "ordinal" || event.task_type == "quantity") {
+            sel_points_hit = ball_count == event.num_targs_to_hit ? 1 : 0;
+            //sel_el = event.task_type == "quantity" ? ball_count : hit_els;
+
+            //sel_el = ball_count;
+            sel_el = sel_acc_els;
+          }
+
+          /* time_last =
+            typeof event.time === "object" ? event.time[0] : event.time;
+          //POPULATE POINTS, SELECTIONS AND TIME ARRAYS FOR DISPLAY IN SHEETS
+          time_diff = (time_last - time_first) / 1000;
+          this.tasks_time[t_key][att_key] = Array(
+            taskname,
+            attemptname,
+            time_diff,
+            time_first,
+            time_last
+          ); */
+        }
+
+        //IF MULTIPLE CHOICE, THE VALUES ARE ACCUMULATED AND WRITTEN TO RESULT ARRAYS ON LAST EVENT IN ATTEMPT AT TASK
+        if (
+          (event.task_type == "multi_choice" ||
+            event.task_type == "ordinal" ||
+            event.task_type == "quantity") &&
+          ev_key == events.length - 1
+        ) {
+          if (event.task_type == "multi_choice") {
+            sel_points = sel_acc_points;
+            sel_el = sel_acc_els;
+          } else {
+            sel_el = sel_acc_els;
+          }
+        }
+
+        if (event.task_type == "dice_sum" && ev_key == events.length - 1) {
+          //Dices that hit targets are indexes in hit_trg_src array (trg id | val). Loop array and group by trg id to find sum per targets.
+          //Points given if targets have dices with value of n
+          for (var key in hit_trg_src) {
+            let trg_sval = hit_trg_src[key].split("|");
+
+            if (hit_targets[trg_sval[0]] == undefined) {
+              hit_targets[trg_sval[0]] = parseInt(trg_sval[1]);
+            } else
+              hit_targets[trg_sval[0]] =
+                parseInt(hit_targets[trg_sval[0]]) + parseInt(trg_sval[1]);
+          }
+          for (var key in hit_targets) {
+            sel_points += hit_targets[key] == event.num_targs_to_hit ? 1 : 0;
+          }
+        }
+      }
+    }
+    return sel_points_hit > 0 ? sel_points_hit : sel_points;
   }
 
   getSVGinfo() {
@@ -220,44 +461,47 @@ export default class MatteWidget {
     };
     //if playback mode and there is log data (answer) to emulate
     if (this.answer.length) {
-      this.answer.shift()
+      this.answer.shift();
       this.state = {
         //Initial state
-        nextevent: this.answer[this.ini_idx].event,
-        prevevent: this.answer[this.ini_idx].event,
-        current: this.ini_idx,        
+        nextevent: this.answer[0].event,
+        prevevent: this.answer[0].event,
+        current: 0,
         rev_play: false,
-        forward: (e) => {       
+        forward: (e) => {
           //next action and index (augmented below)
           let action = this.state.nextevent;
-          let index = this.state.current;                    
-          
-          let btn_class = e.srcElement.firstChild == null? e.srcElement: e.srcElement.firstChild;
-          //if second button is forward play->increase state by 1, else if button is skip to start->set state to 0
-          this.state.current =
-            (!btn_class.className.contains(this.skip_to_start)) 
-                ? ( (this.state.current + 1 ) % this.answer.length )
-                : this.ini_idx;
-
-          this.state.nextevent = this.answer[this.state.current].event;        
+          let index = this.state.current;
+          let btn_class =
+            e.srcElement.firstChild == null
+              ? e.srcElement
+              : e.srcElement.firstChild;
+          //if second button is "forward play"->increase state by 1, else if button is "skip to start"->set state to 0
+          this.state.current = !btn_class.className.contains(this.skip_to_start)
+            ? (this.state.current + 1) % this.answer.length
+            : 0;
+          this.state.nextevent = this.answer[this.state.current].event;
 
           return { action: action, index: index };
         },
         //"back" BUTTON || "skip forward" BUTTON clicked
         back: (e) => {
           let action = this.state.prevevent;
-          let index = this.state.current;          
+          let index = this.state.current;
 
-          if(e.target.className.contains(this.skip_to_end)) {
-            this.state.current = this.ini_idx            
+          if (e.target.className.contains(this.skip_to_end)) {
+            this.state.current = 0;
           } else {
             //reduced position by 1 (if not 0)
-            this.state.current = this.state.current == this.ini_idx? (this.answer.length - 1): this.state.current - 1;
+            this.state.current =
+              this.state.current == 0
+                ? this.answer.length - 1
+                : this.state.current - 1;
           }
           this.state.prevevent = this.answer[this.state.current].event;
 
-          return { action: action, index: index};
-        }
+          return { action: action, index: index };
+        },
       };
       this.buildPlayback();
     } else {
@@ -303,7 +547,7 @@ export default class MatteWidget {
           //  this.selected_class = "in_color";
         }
       }
-    }    
+    }
     let lg_moved_obj = [];
     let lg_times = [];
 
@@ -313,8 +557,7 @@ export default class MatteWidget {
     //Reset moving object (source)
 
     //Loop all source objects
-    for (let src_el of all_src) {     
-
+    for (let src_el of all_src) {
       //Loop all log elements
       for (let lg_el = 0; lg_el < lg.length; lg_el++) {
         //add string to start of node id if it start with integer in svg nodetree
@@ -348,17 +591,19 @@ export default class MatteWidget {
             let x_val = typeof lg === "object" ? lg[lg_el].x[0] : lg.x[0];
             let y_val = typeof lg === "object" ? lg[lg_el].y[0] : lg.y[0];
 
-             //diff x            
-              this.x_offset[log_objid] = svg_obj.node.transform.animVal[0].matrix["e"];
-            
-            //diff y            
-              this.y_offset[log_objid] = svg_obj.node.transform.animVal[0].matrix["f"];
+            //diff x
+            this.x_offset[log_objid] =
+              svg_obj.node.transform.animVal[0].matrix["e"];
+
+            //diff y
+            this.y_offset[log_objid] =
+              svg_obj.node.transform.animVal[0].matrix["f"];
           }
           if (
             lg_moved_obj.includes("gr" + log_objid) == false &&
             lg_times.includes(lg[lg_el].time[0]) == false
           ) {
-             lg_moved_obj.push("gr" + log_objid);
+            lg_moved_obj.push("gr" + log_objid);
             lg_times.push(lg[lg_el].time[0]);
 
             //
@@ -377,7 +622,7 @@ export default class MatteWidget {
               this.init_mx_d[log_objid] =
                 src_el.node.transform.animVal[0].matrix["d"];
             }
-               src_el.node.setAttribute(
+            src_el.node.setAttribute(
               "transform",
               "matrix(" +
                 this.init_mx_a[log_objid] +
@@ -387,12 +632,12 @@ export default class MatteWidget {
                 this.init_mx_c[log_objid] +
                 "," +
                 this.init_mx_d[log_objid] +
-                "," +                
-                src_el.node._gsTransform.x +                
-                "," + 
-                src_el.node._gsTransform.y +                
-                ")" 
-            );  
+                "," +
+                src_el.node._gsTransform.x +
+                "," +
+                src_el.node._gsTransform.y +
+                ")"
+            );
 
             src_el.node.style.opacity = 1;
           }
@@ -433,13 +678,12 @@ export default class MatteWidget {
   //******************************************************************* */
   //PLAYBACK: Main logic for emulating log event through svg actions
   replay_svg(arg) {
-    if (arg == this.ini_idx && this.index != 1) { 
+    if (arg == 0 && this.index != 1) {
       this.reset_svg(arg, this.answer);
-      this.index = 1
+      this.index = 1;
     }
 
-    if(this.restarted == false) {
-
+    if (this.restarted == false) {
       var svg_pricks = SVG.select(".disappear").members;
       for (var i = 0; i < svg_pricks.length; i++) {
         svg_pricks[i].node.classList.toggle("disappear", false);
@@ -458,7 +702,7 @@ export default class MatteWidget {
           if (typeof logg.x === "object") {
             let rev_x = logg.x.slice();
             let rev_y = logg.y.slice();
-            if(this.state.rev_play) { 
+            if (this.state.rev_play) {
               rev_x.reverse();
               rev_y.reverse();
             }
@@ -471,23 +715,23 @@ export default class MatteWidget {
                       ? logg.time[index + 1] - logg.time[index]
                       : 0;
                   let pos_x =
-                    index > 0
-                      ? rev_x[index]
-                      : this.x_offset[logg.src_id];
+                    index > 0 ? rev_x[index] : this.x_offset[logg.src_id];
 
                   let pos_y =
-                    index > 0
-                    ? rev_y[index]
-                      : this.y_offset[logg.src_id];
-
-                    
+                    index > 0 ? rev_y[index] : this.y_offset[logg.src_id];
 
                   let nd_mx = svg_obj.node.transform.animVal[0].matrix;
 
-                //set matrix with x and y offset values                
-                  let xp = (pos_x == 0) && nd_mx != undefined && nd_mx["e"] != undefined  ? nd_mx["e"] : pos_x
-                  let yp = (pos_y == 0) && nd_mx != undefined  && nd_mx["f"] != undefined? nd_mx["f"] : pos_y 
-                  
+                  //set matrix with x and y offset values
+                  let xp =
+                    pos_x == 0 && nd_mx != undefined && nd_mx["e"] != undefined
+                      ? nd_mx["e"]
+                      : pos_x;
+                  let yp =
+                    pos_y == 0 && nd_mx != undefined && nd_mx["f"] != undefined
+                      ? nd_mx["f"]
+                      : pos_y;
+
                   svg_obj.node.setAttribute(
                     "transform",
                     "matrix(" +
@@ -505,10 +749,11 @@ export default class MatteWidget {
                       ")"
                   );
                 },
-                (this.view_endstate)? 1: 
-                 (index < rev_x.length && index == 1000 //comment last cond to apply logtime
+                this.view_endstate
+                  ? 1
+                  : index < rev_x.length && index == 1000 //comment last cond to apply logtime
                   ? (logg.time[index + 1] - logg.time[index]) * index * 10
-                  : interval * index)
+                  : interval * index
               );
             });
           }
@@ -531,7 +776,7 @@ export default class MatteWidget {
           }
           break;
         case "select_click":
-        /* case "timer_click":
+          /* case "timer_click":
         case "next_click":
         case "info_click": */
           var memb = document.querySelectorAll(
@@ -539,7 +784,7 @@ export default class MatteWidget {
           );
           if (memb.length > 0) {
             for (var j = 0; j < memb.length; j++) {
-               memb[j].classList.toggle(this.selected_class, false);
+              memb[j].classList.toggle(this.selected_class, false);
               memb[j].classList.toggle("unframed", false);
             }
           }
@@ -547,7 +792,7 @@ export default class MatteWidget {
           let svg_sel_el = SVG().select("#" + logg.src_id).members[0].node;
           svg_sel_el.classList.toggle(this.selected_class, true);
 
-        break;
+          break;
       }
     }
   }
@@ -572,101 +817,115 @@ export default class MatteWidget {
     menuDivElement.classList.add("drawing-playback-container");
 
     const ControlDivElement = document.createElement("div");
-    ControlDivElement.classList.add("drawing-playback-container");    
+    ControlDivElement.classList.add("drawing-playback-container");
 
-    let actions = [{}]
+    let actions = [{}];
     //navigating between answers (states)
-    actions[0] = 
-      {
-        index: this.state.current,
-        name: "forward",
-        handler: (e) => {
+    actions[0] = {
+      index: this.state.current,
+      name: "forward",
+      handler: (e) => {
+        this.state.rev_play = false;
+        this.view_endstate = false;
+        let toggle = false;
+        let { action, index } = this.state.forward(e);
+        if (index == this.answer.length - 1) {
+          toggle = true;
+        }
+        //IF DIRECT BACKWARD FROM LAST EVENT
+        let div_bck = document.getElementById("backward");
+        let btn_class =
+          e.srcElement.firstChild == null
+            ? e.srcElement
+            : e.srcElement.firstChild;
+        if (
+          btn_class.className.contains(this.skip_to_start) &&
+          div_bck.firstElementChild.classList.contains(this.play_previous)
+        ) {
+          this.restarted = true;
+          this.saveImage(this.svgelement);
+        } else {
+          this.restarted = false;
+        }
+        if (index == 0) {
+          //TOGGLE "skip_forward/rewind" BUTTON WHEN NAVIGATING TO/FROM FIRST ELEMENT
+          div_bck.firstElementChild.classList.remove(
+            this.state.current == 1 ? this.skip_to_end : this.play_previous
+          );
+          div_bck.firstElementChild.classList.add(
+            this.state.current == 1 ? this.play_previous : this.skip_to_end
+          );
+        }
+        this.index = index; //FOR RESETTING PLAYBACK OR NOT
+        this.eventHandlers[action](index);
+
+        return toggle;
+      },
+      icon: this.play_next,
+      reset_icon: this.skip_to_start,
+    };
+
+    actions[1] = {
+      index: this.state.current,
+      name: "backward",
+      handler: (e) => {
+        let toggle = false;
+        this.view_endstate = false;
+        let div_forw = document.getElementById("forward");
+        let { action, index } = this.state.back(e);
+
+        //IF PRESSED "skip to end" BUTTON, ALWAYS TOGGLE TO SHOW THE "previous" BUTTON, AND ALWAYS SHOW ADJECENT "skip back to start" BUTTON
+        if (e.target.classList.contains(this.skip_to_end)) {
+          div_forw.firstElementChild.classList.remove(this.play_next);
+          div_forw.firstElementChild.classList.add(this.skip_to_start);
+          toggle = true;
+          this.restarted = false; //PLAYBACK MUST BE FALSE IN ORDER TO PLAY (WHEN BACK TO START RESTARTED = TRUE -> NO PLAY)
+          this.view_endstate = true;
           this.state.rev_play = false;
-          this.view_endstate = false;
-          let toggle = false;
-          let { action, index } = this.state.forward(e);
-          if (index == this.answer.length - 1) { 
+
+          //const promise9 = new Promise((resolve, reject) => {
+          for (let i = 0; i < this.answer.length; i++) {
+            this.eventHandlers[this.answer[i].event](i);
+          }
+          //resolve()
+          //});
+
+          //promise9.then(() => {
+          //let rep = this.saveImage(this.svgelement);
+          //});
+
+          //IF PRESSED "previous" BUTTON, TOGGLE ONLY IF FIRST ELEMENT IS REACHED, AND ALWAYS SHOW ADJECENT "play next" BUTTON
+        } else {
+          toggle = index > 1 ? true : false;
+
+          if (
+            div_forw.firstElementChild.classList.contains(this.skip_to_start)
+          ) {
+            div_forw.firstElementChild.classList.remove(this.skip_to_start);
+            div_forw.firstElementChild.classList.add(this.play_next);
             toggle = true;
-          }   
-          //if direct backward from last event
-          let div_bck = document.getElementById("backward");
-          let btn_class = e.srcElement.firstChild == null? e.srcElement: e.srcElement.firstChild;
-          if(btn_class.className.contains(this.skip_to_start) && div_bck.firstElementChild.classList.contains(this.play_previous) ) {
-            this.restarted = true
-          }  else {
-            this.restarted = false
           }
-          
-          if (index == this.ini_idx) {
-            //toggle skip_forward/rewind button when navigating to/from first element
-            div_bck.firstElementChild.classList.remove( (this.state.current == 1)? this.skip_to_end: this.play_previous )
-            div_bck.firstElementChild.classList.add( (this.state.current == 1)? this.play_previous: this.skip_to_end )
-          }
-
-          this.index = index;
-          this.eventHandlers[action](index);         
-
-          return toggle;
-        },       
-        
-        icon: this.play_next,                
-        reset_icon: this.skip_to_start,
-      }
-    
-     actions[1] = 
-      {
-        index: this.state.current,        
-
-        name: "backward",
-        handler: (e) => {
-          let toggle = false;  
-          this.view_endstate = false;        
-          let div_forw = document.getElementById("forward");
-          let { action, index} = this.state.back(e);           
-                   
-          //IF PRESSED "skip to end" BUTTON, ALWAYS TOGGLE TO SHOW THE "previous" BUTTON, AND ALWAYS SHOW ADJECENT "skip back to start" BUTTON
-          if (e.target.classList.contains(this.skip_to_end) ){           
-            div_forw.firstElementChild.classList.remove(this.play_next)
-            div_forw.firstElementChild.classList.add(this.skip_to_start)
-            toggle = true   
-            this.restarted = false //playback must be false in order to play (when back to start restarted = true -> no play)
-            this.view_endstate = true
-            this.state.rev_play = false;
-            for(let i=0; i<this.answer.length; i++) {
-              this.eventHandlers[this.answer[i].event](i);
-            }                        
-
-          //IF PRESSED "previous" BUTTON, ONLY TOGGLE IF FIRST ELEMENT IS REACHED, AND ALWAYS SHOW ADJECENT "play next" BUTTON
-          } else {                   
-            toggle = (index > this.ini_idx + 1)? true: false
-
-            if(div_forw.firstElementChild.classList.contains(this.skip_to_start) ) {
-              div_forw.firstElementChild.classList.remove(this.skip_to_start)
-              div_forw.firstElementChild.classList.add(this.play_next)       
-              toggle = true
-            }            
-            this.index = index //for resetting playback or not
-            this.state.rev_play = true;
-            this.eventHandlers[action](this.state.current );
-          }
-          return toggle;
-        },  
-        icon: this.skip_to_end,                
-        reset_icon: this.play_previous,
-      }
-    ; 
-    for (let tool of actions) {      
+          this.index = index; //FOR RESETTING PLAYBACK OR NOT
+          this.state.rev_play = true; //IF BACKWARDS PLAY
+          this.eventHandlers[action](this.state.current);
+        }
+        return toggle;
+      },
+      icon: this.skip_to_end,
+      reset_icon: this.play_previous,
+    };
+    for (let tool of actions) {
       let div = document.createElement("div");
-      div.id = tool.name
+      div.id = tool.name;
       div.classList.add("playback-tool");
       // div.style.backgroundColor = '#000'
       let i = document.createElement("i");
       i.classList.add("mdi", tool.icon);
       div.append(i);
       ControlDivElement.append(div);
-      
+
       div.addEventListener("click", (e) => {
-        let toggle = tool.handler(e);          
+        let toggle = tool.handler(e);
 
         if (toggle) {
           i.classList.remove(tool.icon);
@@ -675,11 +934,52 @@ export default class MatteWidget {
           i.classList.remove(tool.reset_icon);
           i.classList.add(tool.icon);
         }
-      });      
+      });
     }
     const divEl = document.getElementById(this.divElementId);
     menuDivElement.append(ControlDivElement);
     divEl.prepend(menuDivElement);
+  }
+
+  //****************************** */
+  //load image into SVG DOM tree
+  saveImage(svg_el) {
+    var svgElement = svg_el;
+    let { width, height } = svgElement.node.getBBox();
+    width = this.config.viewBox.x;
+    height = this.config.viewBox.y;
+    let clonedSvgElement = svgElement.node.cloneNode(true);
+    // true for dyp kloning
+    let outerHTML = clonedSvgElement.outerHTML,
+      blob = new Blob([outerHTML], { type: "image/svg+xml;charset=utf-8" });
+    let URL = window.URL || window.webkitURL || window;
+    let blobURL = URL.createObjectURL(blob);
+
+    let image = new Image();
+    image.onload = () => {
+      let canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      let context = canvas.getContext("2d");
+      // draw image in canvas starting left-0 , top - 0
+      context.drawImage(image, 0, 0, width, height);
+      let png = canvas.toDataURL(); // default png
+      /* let jpeg = canvas.toDataURL('image/jpg');
+      let webp = canvas.toDataURL('image/webp'); */
+      download(png, "image.png");
+      //  downloadImage(canvas); need to implement
+    };
+    image.src = blobURL;
+
+    var download = function (href, name) {
+      var link = document.createElement("a");
+      link.download = name;
+      link.style.opacity = "0";
+      document.head.append(link);
+      link.href = href;
+      link.click();
+      link.remove();
+    };
   }
 
   //****************************** */
@@ -824,6 +1124,19 @@ export default class MatteWidget {
 
       //if next button is clicked, it is logged
       this.setEventdata("next_click", event);
+
+      let pnt = this.calculate_points(this.answer);
+      if (pnt != null && pnt > 0) {
+        if (window.diff_level < 4) {
+          window.diff_level++;
+          window.alert("Gjør deg klar for en litt vanskeligere oppgave");
+        }
+      } else {
+        if (window.diff_level > 1) {
+          window.diff_level--;
+          window.alert("Gjør deg klar for en litt enklere oppgave");
+        }
+      }
 
       this.audioEl.pause();
 
@@ -1279,7 +1592,11 @@ export default class MatteWidget {
 
   //hente tre første siffer i filnavn
   getFileNumstr() {
-    let fnm = this.filename != undefined ? this.filename : this.config.svgUrl;
+    let fnm =
+      this.filename != undefined
+        ? this.filename
+        : this.config.svgdir + this.get_task_from_level(this.diff_level);
+    //let fnm = this.filename != undefined ? this.filename : this.config.svgUrl;
     return fnm.substr(fnm.search("[0-9]{3}"), 3);
   }
 

@@ -3,9 +3,9 @@ import Widget from "./matteWidget.js";
 //import Report from "./makeReport.js";
 import makeReport from "./makeReport.js";
 
-const configFile = "configA.json";
 let currentConfig;
-// const configFile = 'configB.json'
+//const configFile = "configA.json";
+const configFile = 'configB.json'
 
 const divContainer = document.getElementById("widget-container");
 const fileUpload = document.getElementById("config-file");
@@ -30,12 +30,6 @@ answerJsons.onchange = (inn) => {
     for (var i = 0; i < chosen_files.length; i++) {
       (function (f, i) {
         var filereader = new FileReader();
-
-        
-        
-      
-
-
 
         filereader.onloadend = function (e) {
           //console.log("filereader.onloaded: File: " + f.name + " index:" + i);

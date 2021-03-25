@@ -1,7 +1,14 @@
 {
-  "svg_url": "/svgfiler/MC.svg",
-  "viewBox": {
-    "x": 768,
-    "y": 1024
-  }
+  "level1": ["080-088-estimation/089_Estimation10.svg", "080-088-estimation/089_Estimation10.svg", "080-088-estimation/089_Estimation10.svg"],
+  "level2": ["040-046-representnum/041_Representingnumber2.svg", "090-096-numpattern/095_Number patterns6.svg", "023-032-numquantity/123_numberandquantity1.svg"], 
+  "level3": ["040-046-representnum/045_Representingnumber6.svg", "001-013-numberid/110_numberidentification10.svg", "080-088-estimation/086_Estimation7.svg"], 
+  "level4": ["040-046-representnum/043_Representingnumber4.svg", "023-032-numquantity/130_numberandquantity8.svg", "014-022-syscount/217_systematic_counting4-2.svg"], 
+  "svgdir": "/svgfiler/gunnhild/", 
+  "viewBox": 
+  {
+    "x": 1330,
+    "y": 1000
+  }, 
+  "mp3BaseUrl": "https://didaktikk.it.ntnu.no/media/files/gunnhild/mp3/"
 }
+  

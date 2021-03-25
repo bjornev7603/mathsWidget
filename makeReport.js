@@ -21,7 +21,7 @@ export default class makeReport {
     for (var t_key in tasks) {
       let task = tasks[t_key];
       let taskname = task.svgfile;
-      let tp = forsok_files.replaceAll("\"", "").split(",")
+      let tp = forsok_files.replaceAll('"', "").split(",");
       this.tasks_time[t_key] = t_key == 0 ? tp : [];
       this.tasks_points[t_key] = t_key == 0 ? tp : [];
       this.tasks_sel_els[t_key] = t_key == 0 ? tp : [];
@@ -30,7 +30,7 @@ export default class makeReport {
       for (var att_key in task.svgfile_group) {
         let attempt = task.svgfile_group[att_key];
         let attemptname = attempt.a_file;
-        let sel_points = 0;
+        let sel_points = null;
         let sel_points_hit = "";
         let sel_el = "";
         let sel_acc_points = 0;
@@ -39,6 +39,8 @@ export default class makeReport {
         let hit_targets = [];
         let hit_trg_src = [];
         let ball_count = 0;
+        let numline_value = null;
+        let isNumberLineTask = false;
         time_first = time_last = time_diff = 0;
 
         //loop EVENTS in each attempt
@@ -59,20 +61,23 @@ export default class makeReport {
                 typeof event.time === "object" ? event.time[0] : event.time;
             }
 
+            //isNumberLineTask = false;
+
+            //why condition on 129, 130, 089?
             if (
               event.event == "select_click" ||
               event.event == "hit" ||
               (event.event == "not_hit" &&
-                (task.svgfile == "129_numberandquantity7.svg" ||
-                  task.svgfile == "130_numberandquantity8.svg" ||
-                  task.svgfile == "139_quantitydiscrimination7.svg" ||
-                  task.svgfile == "089_Estimation10.svg"))
+                (tasks[t_key].svgfile == "129_numberandquantity7.svg" ||
+                  tasks[t_key].svgfile == "130_numberandquantity8.svg" ||
+                  tasks[t_key].svgfile == "139_quantitydiscrimination7.svg"))
+              //|| tasks[t_key].svgfile.contains("Estimation")))
             ) {
               sel_points =
                 event.sel_points != null &&
                 typeof Number(event.sel_points) === "number"
                   ? Number(event.sel_points)
-                  : 0;
+                  : null;
               //sel_el = event.event == "hit" ? event.target_val : event.s_val;
 
               //if we also want to know the wrong target elements selected
@@ -82,9 +87,38 @@ export default class makeReport {
                 sel_el = event.s_val;
               }
 
-              if (task.svgfile == "089_Estimation10.svg") {
-                let tot_x = event.x + 503;
-                sel_el = tot_x + ": " + (tot_x / (1237 - 128)) * 100 + "%";
+              if (
+                event.event == "hit" &&
+                (tasks[t_key].svgfile.contains("Estimation5") ||
+                  tasks[t_key].svgfile.contains("Estimation6") ||
+                  tasks[t_key].svgfile.contains("Estimation7") ||
+                  tasks[t_key].svgfile.contains("Estimation8") ||
+                  tasks[t_key].svgfile.contains("Estimation9") ||
+                  tasks[t_key].svgfile.contains("Estimation10"))
+              ) {
+                let linepos = [];
+
+                if (tasks[t_key].svgfile.contains("Estimation10"))
+                  linepos = [503, 5, 1237, 10];
+                if (tasks[t_key].svgfile.contains("Estimation5"))
+                  linepos = [598, 7, 1236, 10];
+                if (tasks[t_key].svgfile.contains("Estimation6"))
+                  linepos = [448, 57, 1187, 10];
+                if (tasks[t_key].svgfile.contains("Estimation7"))
+                  linepos = [660, 35, 1348, 20];
+                if (tasks[t_key].svgfile.contains("Estimation8"))
+                  linepos = [686, 28, 1220, 20];
+                if (tasks[t_key].svgfile.contains("Estimation9"))
+                  linepos = [708, 29, 1231, 20];
+
+                let tot_x = event.x + linepos[0];
+                //start position of source is 503px, eventx is relative to this,
+                //so add this to the absolute x-values of targets (0 and 10)
+                numline_value =
+                  /* tot_x + ": " + */ (tot_x / (linepos[2] - linepos[1])) *
+                  linepos[3];
+                numline_value = numline_value.toFixed(2);
+                isNumberLineTask = true;
               }
 
               //no values in quantity tasks, use id as value for sel_id instead
@@ -106,6 +140,7 @@ export default class makeReport {
                 sel_el = event.target_val;
               }
 
+              //Ordinal task: if Source and Target number correspond (and not already counted) -> increase "ball_count". Else decrease count
               if (event.task_type == "ordinal") {
                 if (sel_el == event.target_val) {
                   if (
@@ -159,9 +194,9 @@ export default class makeReport {
             }
             if (
               event.event == "not_hit" &&
-              task.svgfile != "129_numberandquantity7.svg" &&
-              task.svgfile != "130_numberandquantity8.svg" &&
-              task.svgfile != "139_quantitydiscrimination7.svg"
+              tasks[t_key].svgfile != "129_numberandquantity7.svg" &&
+              tasks[t_key].svgfile != "130_numberandquantity8.svg" &&
+              tasks[t_key].svgfile != "139_quantitydiscrimination7.svg"
             ) {
               //if a ball hit from a specific source ball exists and this is involved in not_hit event, delete it
               if (hit_els[event.src_id] != null) {
@@ -183,6 +218,8 @@ export default class makeReport {
                 event.task_type == "quantity"
               ) {
                 sel_points_hit = ball_count == event.num_targs_to_hit ? 1 : 0;
+                //if tallinje task -> value on line is written to excel
+                if (isNumberLineTask) sel_points_hit = numline_value;
                 //sel_el = event.task_type == "quantity" ? ball_count : hit_els;
 
                 //sel_el = ball_count;
@@ -292,7 +329,7 @@ export default class makeReport {
         if (key == 2) sheets[key].getCell("B1").value("Tidsrom");
 
         //ALLOCATE TABLE COLS AND ROWS FOR CONTENT
-        var table = sheets[key].tables().add("A1:AZ100", true);
+        var table = sheets[key].tables().add("A1:AZ600", true);
 
         // Specify the style to use in the table (this can also be specified as an optional 3rd argument to the 'add' call above).
         table.style(workbook.standardTableStyles("TableStyleMedium2"));
