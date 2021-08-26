@@ -4,8 +4,8 @@ import Widget from "./matteWidget.js";
 import makeReport from "./makeReport.js";
 
 let currentConfig;
-//const configFile = "configA.json";
-const configFile = 'configB.json'
+const configFile = "configA.json";
+//const configFile = 'configB.json'
 
 const divContainer = document.getElementById("widget-container");
 const fileUpload = document.getElementById("config-file");

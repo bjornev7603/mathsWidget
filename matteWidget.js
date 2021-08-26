@@ -122,16 +122,15 @@ export default class MatteWidget {
 
     //
     if (this.svg == null || this.svg == 1) {
-      //fetch(this.svg == null ? this.config.svgUrl : this.svg, {
-      fetch(
+      fetch(this.svg == null ? this.config.svgUrl : this.svg, {
+        /* fetch(
         this.svg == null
           ? this.config.svgdir + this.get_task_from_level(this.diff_level)
           : this.svg,
-        {
-          method: "GET",
-          mode: "no-cors",
-        }
-      )
+        { */
+        method: "GET",
+        mode: "no-cors",
+      })
         .then((resp) => resp.text())
         .then((svgl) => {
           this.parseSVG(svgl);
@@ -1125,7 +1124,7 @@ export default class MatteWidget {
       //if next button is clicked, it is logged
       this.setEventdata("next_click", event);
 
-      let pnt = this.calculate_points(this.answer);
+      /* let pnt = this.calculate_points(this.answer);
       if (pnt != null && pnt > 0) {
         if (window.diff_level < 4) {
           window.diff_level++;
@@ -1136,7 +1135,7 @@ export default class MatteWidget {
           window.diff_level--;
           window.alert("Gjør deg klar for en litt enklere oppgave");
         }
-      }
+      } */
 
       this.audioEl.pause();
 
@@ -1592,11 +1591,11 @@ export default class MatteWidget {
 
   //hente tre første siffer i filnavn
   getFileNumstr() {
-    let fnm =
+    /* let fnm =
       this.filename != undefined
         ? this.filename
-        : this.config.svgdir + this.get_task_from_level(this.diff_level);
-    //let fnm = this.filename != undefined ? this.filename : this.config.svgUrl;
+        : this.config.svgdir + this.get_task_from_level(this.diff_level); */
+    let fnm = this.filename != undefined ? this.filename : this.config.svgUrl;
     return fnm.substr(fnm.search("[0-9]{3}"), 3);
   }
 
