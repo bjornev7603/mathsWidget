@@ -5,7 +5,11 @@ import makeReport from "./makeReport.js";
 
 let currentConfig;
 const configFile = "configA.json";
+<<<<<<< HEAD
 //const configFile = 'configB.json'
+=======
+//const configFile = "configB.json";
+>>>>>>> 29ebaffa890b2dac841b4e6636d6a32e63e451a8
 
 const divContainer = document.getElementById("widget-container");
 const fileUpload = document.getElementById("config-file");
@@ -22,7 +26,7 @@ answerJsons.onchange = (inn) => {
   let jsonstreng = "";
   let attemp_ids = [];
   let task_ids = [];
-  let sss = ""
+  let sss = "";
 
   let chosen_files = inn.currentTarget.files;
 
@@ -34,36 +38,36 @@ answerJsons.onchange = (inn) => {
         filereader.onloadend = function (e) {
           //console.log("filereader.onloaded: File: " + f.name + " index:" + i);
 
-          //extract attempt id from file name        
-          //legger bare inn nye attemptid'er (unngår dobbletgjengere) 
-          if (!attemp_ids.includes(f.name.split(".")[0].slice(5))) { 
-            task_ids[i] = f.name.split("-")[0];        
-                    //hvis førsteside (task1: forsøknavn input) hentes attemptnavn
-            if  (task_ids.length == 0 || f.name.split("-")[0] == task_ids[0]) {
-              attemp_ids[i] = f.name.split(".")[0].slice(5) 
-              sss +=  attemp_ids[i] + ":" + e.currentTarget.result + ",";              
-            } else { //ellers hentes unike attemptid'er med dato
-              attemp_ids[i] = f.name.split(".")[0].slice(5);               
-              
+          //extract attempt id from file name
+          //legger bare inn nye attemptid'er (unngår dobbletgjengere)
+          if (!attemp_ids.includes(f.name.split(".")[0].slice(5))) {
+            task_ids[i] = f.name.split("-")[0];
+            //hvis førsteside (task1: forsøknavn input) hentes attemptnavn
+            if (task_ids.length == 0 || f.name.split("-")[0] == task_ids[0]) {
+              attemp_ids[i] = f.name.split(".")[0].slice(5);
+              sss += attemp_ids[i] + ":" + e.currentTarget.result + ",";
+            } else {
+              //ellers hentes unike attemptid'er med dato
+              attemp_ids[i] = f.name.split(".")[0].slice(5);
+
               //fetch date and time from first matisktikk event
-              let timex = new Date(JSON.parse(e.currentTarget.result)[0].time).toISOString()
-              let att_time = timex.slice(0, 10) + " " + timex.slice(11, 19)
-              sss +=  attemp_ids[i] + ":" + "\"" + att_time +"\"" + ",";
+              let timex = new Date(
+                JSON.parse(e.currentTarget.result)[0].time
+              ).toISOString();
+              let att_time = timex.slice(0, 10) + " " + timex.slice(11, 19);
+              sss += attemp_ids[i] + ":" + '"' + att_time + '"' + ",";
             }
-            
           }
-          if  (task_ids.length > 0 && f.name.split("-")[0] != task_ids[0]) {
-            jsonstreng +=            
+          if (task_ids.length > 0 && f.name.split("-")[0] != task_ids[0]) {
+            jsonstreng +=
               e.currentTarget.result
                 .trim()
                 .slice(1, -1)
                 .replace(
                   /"tdiff": ""|"tdiff": null|"tdiff": "NaN"/g,
                   '"a_file": "' + chosen_files[i].name + '"'
-                ) +
-              ",";
+                ) + ",";
           }
-          
 
           if (i == chosen_files.length - 1) {
             resolve(sss + jsonstreng);

@@ -100,15 +100,6 @@ export default class MatteWidget {
     this.countdown_msec = 10000;
     this.timeout_msec = 3000;
 
-    this.diff_level = 1;
-    if (window.diff_level == undefined) {
-      window.diff_level = this.diff_level;
-    } else {
-      this.diff_level = window.diff_level;
-    }
-
-    this.ran_0_2 = this.getRandomInt(0, 3);
-
     this.vars = {};
 
     this.answer = answer || [];
@@ -146,236 +137,6 @@ export default class MatteWidget {
     }
 
     //SVG event handlers
-  }
-
-  getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
-  }
-
-  get_task_from_level(d_level) {
-    let task = "0";
-    switch (d_level) {
-      case 1:
-        task = this.config.level1[this.ran_0_2];
-        break;
-      case 2:
-        task = this.config.level2[this.ran_0_2];
-        break;
-      case 3:
-        task = this.config.level3[this.ran_0_2];
-        break;
-      case 4:
-        task = this.config.level4[this.ran_0_2];
-        break;
-    }
-    return task;
-  }
-
-  calculate_points(events) {
-    this.tasks_points = [];
-    this.tasks_points[0] = [];
-    let sel_points = 0;
-    let sel_points_hit = "";
-    let sel_el = "";
-    let sel_acc_points = 0;
-    let sel_acc_els = [];
-    let hit_els = [];
-    let hit_targets = [];
-    let hit_trg_src = [];
-    let ball_count = 0;
-    //time_first = time_last = time_diff = 0;
-    for (var ev_key in events) {
-      let event = events[ev_key];
-      //let events = attempt.a_file_group;
-
-      if (
-        event.task_type == "single_choice" ||
-        event.task_type == "multi_choice" ||
-        event.task_type == "single_choice_hit" ||
-        event.task_type == "ordinal" ||
-        event.task_type == "quantity" ||
-        event.task_type == "dice_sum"
-      ) {
-        /* if (ev_key == 0) {
-          time_first =
-            typeof event.time === "object" ? event.time[0] : event.time;
-        } */
-
-        if (
-          event.event == "select_click" ||
-          event.event == "hit" ||
-          (event.event == "not_hit" &&
-            (event.svgfile == "129_numberandquantity7.svg" ||
-              event.svgfile == "130_numberandquantity8.svg" ||
-              event.svgfile == "139_quantitydiscrimination7.svg" ||
-              event.svgfile == "089_Estimation10.svg"))
-        ) {
-          sel_points =
-            event.sel_points != null &&
-            typeof Number(event.sel_points) === "number"
-              ? Number(event.sel_points)
-              : 0;
-          //sel_el = event.event == "hit" ? event.target_val : event.s_val;
-
-          //if we also want to know the wrong target elements selected
-          if (event.task_type == "ordinalx") {
-            sel_el = event.s_val + ";" + event.target_val;
-          } else {
-            sel_el = event.s_val;
-          }
-
-          if (event.svgfile == "089_Estimation10.svg") {
-            let tot_x = event.x + 503;
-            //start position of source is 503px, eventx is relative to this,
-            //so add this to the absolute x-values of targets (0 and 10)
-            sel_el = /* tot_x + ": " + */ (tot_x / (1237 - 5)) * 10;
-          }
-
-          //no values in quantity tasks, use id as value for sel_id instead
-          if (event.task_type == "quantity") {
-            sel_el = event.src_id;
-          }
-          sel_acc_points = sel_acc_points + sel_points;
-
-          sel_acc_els[event.src_id] = sel_el + "|" + event.sel_points;
-
-          if (event.task_type == "single_choice_hit" && event.event == "hit") {
-            if (sel_el == event.target_val) {
-              sel_points_hit = 1;
-            } else sel_points_hit = 0;
-            //actual target id is diplayed in report
-            sel_el = event.target_val;
-          }
-
-          if (event.task_type == "ordinal") {
-            if (sel_el == event.target_val) {
-              if (
-                hit_els[event.src_id] == null ||
-                hit_els[event.src_id] == false
-              ) {
-                ball_count++;
-                hit_els[event.src_id] = true;
-              }
-            } else {
-              //if (ball_count > 0 && hit_els[event.src_id] == true) {
-              if (hit_els[event.src_id] != null) {
-                ball_count--;
-                delete hit_els[event.src_id];
-                //hit_els[event.src_id] = false;
-              }
-            }
-          }
-          //IF task of quantity (eg count ball hit target),
-          //AND this ball is not registered as in target
-          // -> increase ball count
-          if (event.task_type == "quantity") {
-            if (hit_els[event.src_id] == null) {
-              ball_count++;
-              hit_els[event.src_id] = true;
-            }
-          }
-
-          //IF task of dicesum (eg dice hit target),
-          //AND this ball is not registered as in target
-          // -> increase ball count
-          if (event.task_type == "dice_sum") {
-            hit_trg_src[event.src_id] =
-              hit_trg_src[event.target_id] != undefined
-                ? event.target_id +
-                  "|" +
-                  (parseInt(hit_trg_src[event.target_id]) +
-                    parseInt(event.s_val))
-                : event.target_id + "|" + parseInt(event.s_val);
-          }
-        }
-        if (event.event == "de-select_click") {
-          let val_point = sel_acc_els[event.src_id].split("|");
-          if (val_point[1] == "1") {
-            sel_acc_points = sel_acc_points - 1;
-          }
-          if (sel_acc_els[event.src_id] != null) {
-            delete sel_acc_els[event.src_id];
-          }
-          //remove element from sel_acc_els[src_id]
-        }
-        if (
-          event.event == "not_hit" &&
-          event.svgfile != "129_numberandquantity7.svg" &&
-          event.svgfile != "130_numberandquantity8.svg" &&
-          event.svgfile != "139_quantitydiscrimination7.svg"
-        ) {
-          //if a ball hit from a specific source ball exists and this is involved in not_hit event, delete it
-          if (hit_els[event.src_id] != null) {
-            delete hit_els[event.src_id];
-            ball_count--;
-          }
-          //if dice task and a specific target has a dice removed from its surface, remove the dice points of this target's actual dice points
-          if (
-            event.task_type == "dice_sum" &&
-            hit_trg_src[event.src_id] != undefined
-          ) {
-            delete hit_trg_src[event.src_id];
-          }
-        }
-
-        if (ev_key == events.length - 1) {
-          if (event.task_type == "ordinal" || event.task_type == "quantity") {
-            sel_points_hit = ball_count == event.num_targs_to_hit ? 1 : 0;
-            //sel_el = event.task_type == "quantity" ? ball_count : hit_els;
-
-            //sel_el = ball_count;
-            sel_el = sel_acc_els;
-          }
-
-          /* time_last =
-            typeof event.time === "object" ? event.time[0] : event.time;
-          //POPULATE POINTS, SELECTIONS AND TIME ARRAYS FOR DISPLAY IN SHEETS
-          time_diff = (time_last - time_first) / 1000;
-          this.tasks_time[t_key][att_key] = Array(
-            taskname,
-            attemptname,
-            time_diff,
-            time_first,
-            time_last
-          ); */
-        }
-
-        //IF MULTIPLE CHOICE, THE VALUES ARE ACCUMULATED AND WRITTEN TO RESULT ARRAYS ON LAST EVENT IN ATTEMPT AT TASK
-        if (
-          (event.task_type == "multi_choice" ||
-            event.task_type == "ordinal" ||
-            event.task_type == "quantity") &&
-          ev_key == events.length - 1
-        ) {
-          if (event.task_type == "multi_choice") {
-            sel_points = sel_acc_points;
-            sel_el = sel_acc_els;
-          } else {
-            sel_el = sel_acc_els;
-          }
-        }
-
-        if (event.task_type == "dice_sum" && ev_key == events.length - 1) {
-          //Dices that hit targets are indexes in hit_trg_src array (trg id | val). Loop array and group by trg id to find sum per targets.
-          //Points given if targets have dices with value of n
-          for (var key in hit_trg_src) {
-            let trg_sval = hit_trg_src[key].split("|");
-
-            if (hit_targets[trg_sval[0]] == undefined) {
-              hit_targets[trg_sval[0]] = parseInt(trg_sval[1]);
-            } else
-              hit_targets[trg_sval[0]] =
-                parseInt(hit_targets[trg_sval[0]]) + parseInt(trg_sval[1]);
-          }
-          for (var key in hit_targets) {
-            sel_points += hit_targets[key] == event.num_targs_to_hit ? 1 : 0;
-          }
-        }
-      }
-    }
-    return sel_points_hit > 0 ? sel_points_hit : sel_points;
   }
 
   getSVGinfo() {
@@ -624,13 +385,15 @@ export default class MatteWidget {
             src_el.node.setAttribute(
               "transform",
               "matrix(" +
-                this.init_mx_a[log_objid] +
+                1 +
+                //this.init_mx_a[log_objid] +
                 "," +
                 this.init_mx_b[log_objid] +
                 "," +
                 this.init_mx_c[log_objid] +
                 "," +
-                this.init_mx_d[log_objid] +
+                1 +
+                //this.init_mx_d[log_objid] +
                 "," +
                 src_el.node._gsTransform.x +
                 "," +
@@ -1370,7 +1133,7 @@ export default class MatteWidget {
         //logger hendelser
         event = widgetThis.setEventdata("move", this);
         //e.currentTarget.classList.toggle("indicated", true);
-        e.target.classList.toggle("active-svg", true);
+        e.target.classList.toggle("active-svgxxx", true);
       },
 
       /* onDragEnter: function (e) {
